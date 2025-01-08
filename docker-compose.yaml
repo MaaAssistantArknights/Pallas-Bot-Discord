@@ -1,0 +1,8 @@
+services:
+  owobot:
+    image: ghcr.io/maaassistantarknights/pallasbotdiscord:latest
+    container_name: pallas-bot-discord
+    restart: unless-stopped
+    environment:
+      - ConnectionStrings__PostgreSQL=
+      - Discord__BotToken=

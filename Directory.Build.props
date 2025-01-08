@@ -1,0 +1,36 @@
+<Project>
+
+    <!-- Project -->
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <NoWarn>CA1305</NoWarn>
+    </PropertyGroup>
+
+    <!-- Documentation -->
+    <PropertyGroup Condition="$(Configuration) == 'Debug'">
+        <NoWarn>CS1591</NoWarn>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <!-- Analyzer -->
+    <PropertyGroup>
+        <AnalysisLevel>9.0</AnalysisLevel>
+        <AnalysisMode>Recommended</AnalysisMode>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    </PropertyGroup>
+
+    <!-- Assembly Meta -->
+    <PropertyGroup>
+        <Authors>MAA Team</Authors>
+        <Copyright>Copyright © 2025 MAA Team.</Copyright>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/MaaAssistantArknights/Pallas-Bot-Discord.git</RepositoryUrl>
+        <NeutralLanguage>en-US</NeutralLanguage>
+    </PropertyGroup>
+
+</Project>

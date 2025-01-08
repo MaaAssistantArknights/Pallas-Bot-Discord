@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PallasBot.Aspire.AppHost", "src\PallasBot.Aspire.AppHost\PallasBot.Aspire.AppHost.csproj", "{6A3CB040-8551-5AB4-09D7-1F60DE7E6BA5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{089100B1-113F-4E66-888A-E83F3999EAFD}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		docker-compose.yaml = docker-compose.yaml
+		LICENSE = LICENSE
+		README.md = README.md
+		Dockerfile = Dockerfile
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6A3CB040-8551-5AB4-09D7-1F60DE7E6BA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A3CB040-8551-5AB4-09D7-1F60DE7E6BA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A3CB040-8551-5AB4-09D7-1F60DE7E6BA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A3CB040-8551-5AB4-09D7-1F60DE7E6BA5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
