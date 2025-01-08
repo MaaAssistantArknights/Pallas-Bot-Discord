@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PallasBot.Aspire.ServiceDefaults", "src\PallasBot.Aspire.ServiceDefaults\PallasBot.Aspire.ServiceDefaults.csproj", "{46D333C7-C80E-4B32-9AE3-751BF15A2D33}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,5 +27,9 @@ Global
 		{6A3CB040-8551-5AB4-09D7-1F60DE7E6BA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A3CB040-8551-5AB4-09D7-1F60DE7E6BA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A3CB040-8551-5AB4-09D7-1F60DE7E6BA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46D333C7-C80E-4B32-9AE3-751BF15A2D33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46D333C7-C80E-4B32-9AE3-751BF15A2D33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46D333C7-C80E-4B32-9AE3-751BF15A2D33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46D333C7-C80E-4B32-9AE3-751BF15A2D33}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
