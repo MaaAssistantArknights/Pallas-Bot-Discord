@@ -5,6 +5,8 @@ using Microsoft.Extensions.Hosting;
 using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using PallasBot.Domain.Abstract;
+using PallasBot.EntityFrameworkCore.Services;
 
 namespace PallasBot.EntityFrameworkCore;
 
@@ -36,5 +38,12 @@ public static class Extensions
 
         builder.Services.AddHealthChecks()
             .AddDbContextCheck<PallasBotDbContext>();
+
+        builder.AddDataLayerServices();
+    }
+
+    private static void AddDataLayerServices(this IHostApplicationBuilder builder)
+    {
+        builder.Services.AddScoped<IDynamicConfigurationService, DynamicConfigurationService>();
     }
 }

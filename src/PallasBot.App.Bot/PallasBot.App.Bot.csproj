@@ -4,4 +4,10 @@
     <ProjectReference Include="..\PallasBot.Application.Webhook\PallasBot.Application.Webhook.csproj" />
     <ProjectReference Include="..\PallasBot.Aspire.ServiceDefaults\PallasBot.Aspire.ServiceDefaults.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>

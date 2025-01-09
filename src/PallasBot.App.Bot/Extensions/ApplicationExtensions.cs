@@ -42,16 +42,14 @@ public static class ApplicationExtensions
                 var body = await bodyReader.ReadToEndAsync();
 
                 var headers = ctx.Request.Headers
-                    .Select(x =>
-                        new KeyValuePair<string, string[]>(
-                            x.Key,
-                            x.Value
-                                .Where(s => string.IsNullOrEmpty(s) is false)
-                                .Cast<string>()
-                                .ToArray()))
-                    .ToList();
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Value
+                            .Where(s => string.IsNullOrEmpty(s) is false)
+                            .Cast<string>()
+                            .ToArray());
 
-                await endpoint.Publish(new WebhookMessage
+                await endpoint.Publish(new WebhookMessageMqo
                 {
                     Processor = processor,
                     Body = body,

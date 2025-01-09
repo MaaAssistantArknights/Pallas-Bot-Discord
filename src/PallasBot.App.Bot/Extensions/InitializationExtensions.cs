@@ -46,8 +46,10 @@ public static class InitializationExtensions
     {
         builder.Services.AddMassTransit(c =>
         {
-            c.AddConsumers(typeof(PallasBot.Application.Command.Extensions).Assembly);
-            c.AddConsumers(typeof(PallasBot.Application.Webhook.Extensions).Assembly);
+            c.AddConsumers(
+                typeof(PallasBot.Application.Common.Extensions).Assembly,
+                typeof(PallasBot.Application.Command.Extensions).Assembly,
+                typeof(PallasBot.Application.Webhook.Extensions).Assembly);
 
             c.UsingInMemory((ctx, cfg) =>
             {

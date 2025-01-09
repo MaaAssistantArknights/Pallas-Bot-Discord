@@ -10,6 +10,8 @@ public static class ActivitySources
 
     public static readonly ActivitySource CommandAutocompletionActivitySource = new("PallasBot.Application.Command.Autocompletion");
 
+    public static readonly ActivitySource WebhookProcessorActivitySource = new("PallasBot.Application.Webhook.Processor");
+
     public static IEnumerable<string> AllActivitySources
     {
         get
@@ -17,6 +19,7 @@ public static class ActivitySources
             yield return AppActivitySource.Name;
             yield return CommandActivitySource.Name;
             yield return CommandAutocompletionActivitySource.Name;
+            yield return WebhookProcessorActivitySource.Name;
         }
     }
 }
