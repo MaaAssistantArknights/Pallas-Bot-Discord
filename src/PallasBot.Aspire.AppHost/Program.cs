@@ -1,4 +1,5 @@
 ﻿using PallasBot.Aspire.AppHost.Extensions;
+using Projects;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -37,6 +38,9 @@ var postgresql = builder
 
 #endregion
 
+builder.AddProject<PallasBot_App_Bot>("bot")
+    .WithReference(postgresql)
+    .WithHttpsHealthCheck("/health");
 
 var app = builder.Build();
 

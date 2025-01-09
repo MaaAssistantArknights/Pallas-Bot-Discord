@@ -13,5 +13,15 @@
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
   </ItemGroup>
+ 
+  <ItemGroup>
+    <ProjectReference Include="..\PallasBot.App.Bot\PallasBot.App.Bot.csproj" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <None Update="appsettings*.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>

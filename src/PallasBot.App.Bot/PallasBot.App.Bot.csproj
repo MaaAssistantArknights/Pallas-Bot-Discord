@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\PallasBot.Application.Command\PallasBot.Application.Command.csproj" />
+    <ProjectReference Include="..\PallasBot.Application.Webhook\PallasBot.Application.Webhook.csproj" />
+    <ProjectReference Include="..\PallasBot.Aspire.ServiceDefaults\PallasBot.Aspire.ServiceDefaults.csproj" />
+  </ItemGroup>
+</Project>
