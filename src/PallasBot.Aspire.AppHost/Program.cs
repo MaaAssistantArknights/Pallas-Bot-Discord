@@ -8,7 +8,7 @@ builder.ConfigureAppHost();
 #region Parameters
 
 var postgresqlPassword = builder.AddParameter("postgresql-password", "1nyWacUqpb3NMd8BUECiZkP51VHNYaxL", false, true);
-var postgresqlTag = builder.AddParameter("postgresql-tag", "17.0").GetString();
+var postgresqlTag = builder.AddParameter("postgresql-tag", "17.2").GetString();
 
 var enablePgadmin = builder.AddParameter("enable-pgadmin", "false").GetBool();
 
