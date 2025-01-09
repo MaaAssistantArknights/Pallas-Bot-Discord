@@ -6,7 +6,7 @@ namespace PallasBot.Aspire.ServiceDefaults.Configurators;
 
 internal static class HealthCheckConfigurator
 {
-    internal static IHostApplicationBuilder ConfigureHealthChecks(this IHostApplicationBuilder builder)
+    internal static void ConfigureHealthChecks(this IHostApplicationBuilder builder)
     {
         builder.Services.AddRequestTimeouts(
             configure: static timeouts =>
@@ -19,7 +19,5 @@ internal static class HealthCheckConfigurator
 
         builder.Services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
-
-        return builder;
     }
 }

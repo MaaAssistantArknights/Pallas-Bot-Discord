@@ -8,7 +8,7 @@ namespace PallasBot.Aspire.ServiceDefaults.Configurators;
 
 internal static class LoggingConfigurator
 {
-    internal static IHostApplicationBuilder ConfigureSerilog(this IHostApplicationBuilder builder)
+    internal static void ConfigureSerilog(this IHostApplicationBuilder builder)
     {
         builder.Services.AddSerilog(cfg =>
         {
@@ -65,7 +65,5 @@ internal static class LoggingConfigurator
                 }
             });
         });
-
-        return builder;
     }
 }

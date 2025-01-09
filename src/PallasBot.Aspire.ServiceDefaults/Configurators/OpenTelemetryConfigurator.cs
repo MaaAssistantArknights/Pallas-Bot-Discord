@@ -9,7 +9,7 @@ namespace PallasBot.Aspire.ServiceDefaults.Configurators;
 
 internal static class OpenTelemetryConfigurator
 {
-    internal static IHostApplicationBuilder ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
+    internal static void ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
     {
         builder.Logging.AddOpenTelemetry(logging =>
         {
@@ -45,7 +45,15 @@ internal static class OpenTelemetryConfigurator
                 ]).Where(x => string.IsNullOrEmpty(x) is false).Distinct().ToArray();
 
                 tracing
-                    .AddAspNetCoreInstrumentation()
+                    .AddAspNetCoreInstrumentation(aspnet =>
+                    {
+                        string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar"];
+
+                        aspnet.Filter = ctx =>
+                        {
+                            return ignoreUrls.All(ignoreUrl => !ctx.Request.Path.StartsWithSegments(ignoreUrl));
+                        };
+                    })
                     .AddHttpClientInstrumentation(http =>
                     {
                         // Unknown error: Remove the redundant delegate type will cause Rider to mark it as an error
@@ -73,13 +81,11 @@ internal static class OpenTelemetryConfigurator
             });
 
         builder.AddOpenTelemetryExporters();
-
-        return builder;
     }
 
-    private static IHostApplicationBuilder AddOpenTelemetryExporters(this IHostApplicationBuilder builder)
+    private static void AddOpenTelemetryExporters(this IHostApplicationBuilder builder)
     {
-        var genericOtelEndpoint = builder.Configuration["OTEL_EXPORTER_ENDPOINT"];
+        var genericOtelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
         var meterOtelEndpoint = builder.Configuration["OTEL_EXPORTER_METRICS_ENDPOINT"];
         var tracingOtelEndpoint = builder.Configuration["OTEL_EXPORTER_TRACING_ENDPOINT"];
 
@@ -98,7 +104,5 @@ internal static class OpenTelemetryConfigurator
                 tracing.AddOtlpExporter();
             });
         }
-
-        return builder;
     }
 }

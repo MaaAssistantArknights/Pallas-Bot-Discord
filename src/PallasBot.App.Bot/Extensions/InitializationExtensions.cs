@@ -5,12 +5,14 @@ using Discord.Net.WebSockets;
 using Discord.Rest;
 using Discord.WebSocket;
 using MassTransit;
-using Microsoft.AspNetCore.Mvc;
+using MassTransit.Logging;
+using MassTransit.Monitoring;
+using MassTransit.Observables;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using PallasBot.App.Bot.Discord;
 using PallasBot.App.Bot.Services;
 using PallasBot.Application.Command;
-using PallasBot.Application.Common.Abstract;
-using PallasBot.Application.Common.Models;
 using PallasBot.Application.Webhook;
 using PallasBot.Domain.Constants;
 using PallasBot.EntityFrameworkCore;
@@ -28,11 +30,10 @@ public static class InitializationExtensions
         builder.AddApplicationServices();
         builder.AddMassTransitServices();
 
-        builder.Services.AddOpenTelemetry()
-            .WithTracing(tracer =>
-            {
-                tracer.AddSource(ActivitySources.AllActivitySources.ToArray());
-            });
+        builder.Services.ConfigureOpenTelemetryTracerProvider(tracer =>
+        {
+            tracer.AddSource(ActivitySources.AllActivitySources.ToArray());
+        });
     }
 
     private static void AddApplicationServices(this WebApplicationBuilder builder)
@@ -53,6 +54,22 @@ public static class InitializationExtensions
                 cfg.ConfigureEndpoints(ctx);
             });
         });
+
+        builder.Services.ConfigureOpenTelemetryMeterProvider(meter =>
+        {
+            meter.AddMeter(InstrumentationOptions.MeterName);
+        });
+        builder.Services.ConfigureOpenTelemetryTracerProvider(tracer =>
+        {
+            tracer.AddSource(DiagnosticHeaders.DefaultListenerName);
+        });
+
+        builder.Services.AddBusObserver<BusObservable>();
+        builder.Services.AddReceiveEndpointObserver<ReceiveEndpointObservable>();
+        builder.Services.AddReceiveObserver<ReceiveObservable>();
+        builder.Services.AddConsumeObserver<ConsumeObservable>();
+        builder.Services.AddSendObserver<SendObservable>();
+        builder.Services.AddPublishObserver<PublishObservable>();
     }
 
     private static void AddDiscordBot(this IHostApplicationBuilder builder)

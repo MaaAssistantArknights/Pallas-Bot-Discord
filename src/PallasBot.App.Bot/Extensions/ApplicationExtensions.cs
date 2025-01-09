@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using System.ComponentModel;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PallasBot.Application.Common.Models;
@@ -29,23 +30,37 @@ public static class ApplicationExtensions
         }
     }
 
-    public static void ConfigureDefault(this WebApplication app)
-    {
-    }
-
     public static void MapWebhooks(this WebApplication app)
     {
         app.MapPost("/webhook/{processor}", async (
-            [FromServices] IPublishEndpoint endpoint,
-            [FromRoute] string processor,
-            [FromBody] string body) =>
-        {
-            await endpoint.Publish(new WebhookMessage
+                HttpContext ctx,
+                [FromRoute, Description("Webhook processor to use")] string processor) =>
             {
-                Processor = processor,
-                Body = body
-            });
-            return TypedResults.NoContent();
-        });
+                var endpoint = ctx.RequestServices.GetRequiredService<IPublishEndpoint>();
+
+                using var bodyReader = new StreamReader(ctx.Request.Body);
+                var body = await bodyReader.ReadToEndAsync();
+
+                var headers = ctx.Request.Headers
+                    .Select(x =>
+                        new KeyValuePair<string, string[]>(
+                            x.Key,
+                            x.Value
+                                .Where(s => string.IsNullOrEmpty(s) is false)
+                                .Cast<string>()
+                                .ToArray()))
+                    .ToList();
+
+                await endpoint.Publish(new WebhookMessage
+                {
+                    Processor = processor,
+                    Body = body,
+                    Headers = headers
+                });
+                return TypedResults.NoContent();
+            })
+            .WithName("Webhook receiver")
+            .WithDescription("Receive and process webhooks from external services")
+            .WithTags("Webhook");
     }
 }

@@ -39,7 +39,7 @@ var postgresql = builder
 #endregion
 
 builder.AddProject<PallasBot_App_Bot>("bot")
-    .WithReference(postgresql)
+    .WithReference(postgresql, "PostgreSQL")
     .WithHttpsHealthCheck("/health");
 
 var app = builder.Build();
