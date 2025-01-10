@@ -13,8 +13,12 @@ using OpenTelemetry.Trace;
 using PallasBot.App.Bot.Discord;
 using PallasBot.App.Bot.Services;
 using PallasBot.Application.Command;
+using PallasBot.Application.Common;
+using PallasBot.Application.Common.StateMachine;
 using PallasBot.Application.Webhook;
 using PallasBot.Domain.Constants;
+using PallasBot.Domain.Extensions;
+using PallasBot.Domain.Saga;
 using PallasBot.EntityFrameworkCore;
 
 namespace PallasBot.App.Bot.Extensions;
@@ -38,6 +42,7 @@ public static class InitializationExtensions
 
     private static void AddApplicationServices(this WebApplicationBuilder builder)
     {
+        builder.AddApplicationCommonServices();
         builder.AddApplicationCommandServices();
         builder.AddApplicationWebhookServices();
     }
@@ -51,10 +56,14 @@ public static class InitializationExtensions
                 typeof(PallasBot.Application.Command.Extensions).Assembly,
                 typeof(PallasBot.Application.Webhook.Extensions).Assembly);
 
+            c.AddSagaStateMachine<GitHubLoginStateMachine, GitHubLoginSaga>();
+
             c.UsingInMemory((ctx, cfg) =>
             {
                 cfg.ConfigureEndpoints(ctx);
             });
+
+            c.SetInMemorySagaRepositoryProvider();
         });
 
         builder.Services.ConfigureOpenTelemetryMeterProvider(meter =>
@@ -72,6 +81,12 @@ public static class InitializationExtensions
         builder.Services.AddConsumeObserver<ConsumeObservable>();
         builder.Services.AddSendObserver<SendObservable>();
         builder.Services.AddPublishObserver<PublishObservable>();
+
+        builder.Services.AddSagaStateMachineObserver<
+            GitHubLoginSaga,
+            GitHubLoginStateMachine.StateObservable,
+            GitHubLoginStateMachine.EventObservable
+        >();
     }
 
     private static void AddDiscordBot(this IHostApplicationBuilder builder)
@@ -115,7 +130,10 @@ public static class InitializationExtensions
         var webProxy = string.IsNullOrEmpty(networkProxyHost) ? null : new WebProxy(networkProxyHost);
         var networkProxyEnabled = webProxy is not null;
 
-        builder.Services.AddHttpClient("Default")
+        builder.Services.AddHttpClient("Default", client =>
+            {
+                client.DefaultRequestHeaders.Add("user-agent", "PallasBot/1.0.0");
+            })
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 Proxy = webProxy,
@@ -125,6 +143,7 @@ public static class InitializationExtensions
         builder.Services.AddHttpClient("DiscordRest", client =>
             {
                 client.DefaultRequestHeaders.Add("accept-encoding", "gzip, deflate");
+                client.DefaultRequestHeaders.Add("user-agent", "PallasBot/1.0.0");
             })
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {

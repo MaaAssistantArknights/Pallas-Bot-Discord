@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using PallasBot.Application.Common.Abstract;
 using PallasBot.Application.Common.Models;
+using PallasBot.Application.Common.Models.Messages;
 using PallasBot.Domain.Constants;
 
 namespace PallasBot.Application.Webhook.Consumers;

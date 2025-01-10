@@ -1,6 +1,7 @@
 ﻿using Discord.Rest;
 using MassTransit;
 using PallasBot.Application.Common.Models;
+using PallasBot.Application.Common.Models.Messages;
 
 namespace PallasBot.Application.Common.Consumers;
 

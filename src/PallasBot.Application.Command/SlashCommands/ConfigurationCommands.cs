@@ -2,6 +2,7 @@
 using Discord.Interactions;
 using MassTransit;
 using PallasBot.Application.Common.Models;
+using PallasBot.Application.Common.Models.Messages;
 using PallasBot.Domain.Abstract;
 using PallasBot.Domain.Enums;
 

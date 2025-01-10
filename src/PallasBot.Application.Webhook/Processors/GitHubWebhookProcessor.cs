@@ -4,6 +4,7 @@ using Discord;
 using Discord.Rest;
 using PallasBot.Application.Common.Abstract;
 using PallasBot.Application.Common.Models;
+using PallasBot.Application.Common.Models.Messages;
 using PallasBot.Domain.Abstract;
 using PallasBot.Domain.Enums;
 

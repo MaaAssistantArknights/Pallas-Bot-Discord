@@ -1,12 +1,12 @@
-﻿namespace PallasBot.Application.Common.Models;
+﻿namespace PallasBot.Application.Common.Models.Messages;
 
 public record WebhookMessageMqo
 {
-    public string Processor { get; init; } = string.Empty;
+    public required string Processor { get; init; }
 
-    public string Body { get; init; } = string.Empty;
+    public required string Body { get; init; }
 
-    public Dictionary<string, string[]> Headers { get; set; } = [];
+    public required Dictionary<string, string[]> Headers { get; set; }
 
     public string GetHeader(string key)
     {

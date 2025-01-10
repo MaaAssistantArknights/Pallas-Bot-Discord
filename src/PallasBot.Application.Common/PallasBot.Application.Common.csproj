@@ -10,8 +10,4 @@
       <ProjectReference Include="..\PallasBot.EntityFrameworkCore\PallasBot.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="MassTransit" />
-    </ItemGroup>
-
 </Project>
