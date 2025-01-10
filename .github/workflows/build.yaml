@@ -1,8 +1,15 @@
-name: build
+﻿name: build
 
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - ".editorconfig"
+      - ".gitattributes"
+      - ".gitignore"
+      - ".github/**"
+      - "LICENSE"
+      - "**.md"
   pull_request:
     branches: [ "main" ]
     types: [opened, synchronize, reopened]
