@@ -7,6 +7,10 @@ public record GitHubOptions : IOptionType<GitHubOptions>
 {
     public string ClientId { get; set; } = string.Empty;
 
+    public string InstallationId { get; set; } = string.Empty;
+
+    public string PemFile { get; set; } = string.Empty;
+
     public static GitHubOptions Get(IConfiguration configuration)
     {
         var options = new GitHubOptions();

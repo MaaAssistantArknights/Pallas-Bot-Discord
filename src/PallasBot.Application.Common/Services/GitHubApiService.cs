@@ -3,6 +3,8 @@ using FluentResults;
 using Microsoft.Extensions.Configuration;
 using PallasBot.Application.Common.Models.GitHub;
 using PallasBot.Application.Common.Options;
+using PallasBot.Application.Common.Utils;
+using PallasBot.Domain.Utils;
 
 namespace PallasBot.Application.Common.Services;
 
@@ -17,38 +19,35 @@ public class GitHubApiService
         _options = GitHubOptions.Get(configuration);
     }
 
+    #region Authentication
+
     public async Task<GitHubDeviceCodeResponse> GetLoginDeviceFlowDeviceCodeAsync()
     {
-        var req = new HttpRequestMessage(HttpMethod.Post, "https://github.com/login/device/code");
-        req.Headers.Add("Accept", "application/json");
+        using var req = new GitHubHttpRequestBuilder()
+            .Post("https://github.com/login/device/code")
+            .AcceptJson()
+            .WithUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["client_id"] = _options.ClientId,
+                ["scope"] = "read:user"
+            })
+            .Build();
 
-        req.Content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["client_id"] = _options.ClientId,
-            ["scope"] = "read:user"
-        });
-
-        var res = await _client.SendAsync(req);
-        res.EnsureSuccessStatusCode();
-
-        await using var content = await res.Content.ReadAsStreamAsync();
-        var json = await JsonSerializer.DeserializeAsync<GitHubDeviceCodeResponse>(content)
-                   ?? throw new HttpRequestException("Failed to deserialize response");
-
-        return json;
+        return await SendRequest<GitHubDeviceCodeResponse>(req);
     }
 
     public async Task<Result<GitHubDeviceCodeAccessTokenResponse>> GetLoginDeviceFlowAccessTokenAsync(string deviceCode)
     {
-        var req = new HttpRequestMessage(HttpMethod.Post, "https://github.com/login/oauth/access_token");
-        req.Headers.Add("Accept", "application/json");
-
-        req.Content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["client_id"] = _options.ClientId,
-            ["device_code"] = deviceCode,
-            ["grant_type"] = "urn:ietf:params:oauth:grant-type:device_code"
-        });
+        using var req = new GitHubHttpRequestBuilder()
+            .Post("https://github.com/login/oauth/access_token")
+            .AcceptJson()
+            .WithUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["client_id"] = _options.ClientId,
+                ["device_code"] = deviceCode,
+                ["grant_type"] = "urn:ietf:params:oauth:grant-type:device_code"
+            })
+            .Build();
 
         var res = await _client.SendAsync(req);
         res.EnsureSuccessStatusCode();
@@ -70,19 +69,99 @@ public class GitHubApiService
         return json;
     }
 
+    public async Task<GitHubAppAccessToken> GetGitHubAppAccessToken()
+    {
+        var jwt = await JwtUtils.GenerateGitHubAppJwtAsync(_options.ClientId, _options.PemFile);
+        using var req = new GitHubHttpRequestBuilder()
+            .Post($"https://api.github.com/app/installations/{_options.InstallationId}/access_tokens")
+            .AcceptGitHubJson()
+            .WithBearerAuth(jwt)
+            .WithLatestApiVersion()
+            .Build();
+
+        return await SendRequest<GitHubAppAccessToken>(req);
+    }
+
+    #endregion
+
+    #region User
+
     public async Task<GitHubUser> GetCurrentUserInfoAsync(string accessToken)
     {
-        var req = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user");
-        req.Headers.Add("Accept", "application/vnd.github+json");
-        req.Headers.Add("Authorization", $"Bearer {accessToken}");
-        req.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+        using var req = new GitHubHttpRequestBuilder()
+            .Get("https://api.github.com/user")
+            .AcceptGitHubJson()
+            .WithBearerAuth(accessToken)
+            .WithLatestApiVersion()
+            .Build();
 
+        return await SendRequest<GitHubUser>(req);
+    }
+
+    #endregion
+
+    #region Organization
+
+    public async Task<List<GitHubUser>> GetOrganizationMembers(string org, string accessToken)
+    {
+        return await GetPaginatedResponse<GitHubUser>(
+            () => new GitHubHttpRequestBuilder()
+                .WithBearerAuth(accessToken)
+                .AcceptGitHubJson()
+                .WithLatestApiVersion(),
+            $"https://api.github.com/orgs/{org}/members");
+    }
+
+    #endregion
+
+    private async Task<List<T>> GetPaginatedResponse<T>(Func<GitHubHttpRequestBuilder> requestBuilder, string url)
+    {
+        var nextUrl = url;
+
+        var result = new List<T>();
+
+        while (true)
+        {
+            using var req = requestBuilder.Invoke().Get(nextUrl).Build();
+            var res = await _client.SendAsync(req);
+            res.EnsureSuccessStatusCode();
+
+            await using var content = await res.Content.ReadAsStreamAsync();
+            var json = await JsonSerializer.DeserializeAsync<List<T>>(content)
+                       ?? throw new HttpRequestException("Failed to deserialize response");
+
+            result.AddRange(json);
+
+            var hasLinkHeader = res.Headers.TryGetValues("link", out var linksEnumerable);
+            if (hasLinkHeader is false)
+            {
+                return result;
+            }
+
+            var link = (linksEnumerable ?? []).FirstOrDefault();
+            if (link is null)
+            {
+                return result;
+            }
+
+            var links = link.Split(',');
+            var nextLink = links.FirstOrDefault(l => l.Contains("rel=\"next\""));
+            if (nextLink is null)
+            {
+                return result;
+            }
+
+            nextUrl = nextLink.Split(';')[0].Trim().Trim('<', '>');
+        }
+    }
+
+    private async Task<T> SendRequest<T>(HttpRequestMessage req)
+    {
         var res = await _client.SendAsync(req);
-
         res.EnsureSuccessStatusCode();
 
         await using var content = await res.Content.ReadAsStreamAsync();
-        var json = await JsonSerializer.DeserializeAsync<GitHubUser>(content)
+        var json = await JsonSerializer.DeserializeAsync<T>(content)
                    ?? throw new HttpRequestException("Failed to deserialize response");
 
         return json;
