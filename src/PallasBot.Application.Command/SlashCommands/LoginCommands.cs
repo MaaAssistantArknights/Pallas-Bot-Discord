@@ -25,6 +25,7 @@ public class LoginCommands : InteractionModuleBase
         _publishEndpoint = publishEndpoint;
     }
 
+    [RequireUserPermission(GuildPermission.ViewChannel)]
     [SlashCommand("github", "Login and bind your GitHub account")]
     public async Task LoginWithGitHubAsync()
     {

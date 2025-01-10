@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
 using MassTransit;
-using PallasBot.Application.Common.Models;
 using PallasBot.Application.Common.Models.Messages;
 using PallasBot.Domain.Abstract;
 using PallasBot.Domain.Enums;
@@ -11,6 +10,7 @@ namespace PallasBot.Application.Command.SlashCommands;
 [Group("config", "Configuration commands")]
 public class ConfigurationCommands : InteractionModuleBase
 {
+    [RequireUserPermission(GuildPermission.Administrator)]
     [Group("set", "Set configurations")]
     public class ConfigurationSetPrefixCommands : InteractionModuleBase
     {
