@@ -1,0 +1,24 @@
+﻿{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "assignees": ["@AlisaAkiron"],
+  "ignorePaths": [
+    "docker-compose.yaml"
+  ],
+  "packageRules": [
+    {
+      "groupName": "OpenTelemetry",
+      "matchPackageNames": [
+        "OpenTelemetry*"
+      ]
+    },
+    {
+      "groupName": "Serilog",
+      "matchPackageNames": [
+        "Serilog*"
+      ]
+    }
+  ]
+}
