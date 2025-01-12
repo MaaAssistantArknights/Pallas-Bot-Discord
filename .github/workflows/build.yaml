@@ -4,12 +4,14 @@ on:
   push:
     branches: [ "main" ]
     paths-ignore:
+      - "renovate.json"
       - ".editorconfig"
       - ".gitattributes"
       - ".gitignore"
       - ".github/**"
       - "LICENSE"
       - "**.md"
+      - "docker-compose.yaml"
   pull_request:
     branches: [ "main" ]
     types: [opened, synchronize, reopened]
