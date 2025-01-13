@@ -14,6 +14,7 @@ using PallasBot.App.Bot.Discord;
 using PallasBot.App.Bot.Services;
 using PallasBot.Application.Command;
 using PallasBot.Application.Common;
+using PallasBot.Application.Common.Filters;
 using PallasBot.Application.Common.StateMachine;
 using PallasBot.Application.Webhook;
 using PallasBot.Domain.Constants;
@@ -60,6 +61,8 @@ public static class InitializationExtensions
 
             c.UsingInMemory((ctx, cfg) =>
             {
+                cfg.UseConsumeFilter(typeof(ExceptionCatchFilter<>), ctx);
+
                 cfg.ConfigureEndpoints(ctx);
             });
 
