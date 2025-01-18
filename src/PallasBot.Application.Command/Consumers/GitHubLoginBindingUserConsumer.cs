@@ -32,6 +32,7 @@ public class GitHubLoginBindingUserConsumer : IConsumer<GitHubLoginBindingUserMq
 
         var binding = new GitHubUserBinding
         {
+            GuildId = m.GuildId,
             DiscordUserId = m.DiscordUserId,
             GitHubUserId = githubUser.Id,
             GitHubLogin = githubUser.Login,
@@ -52,5 +53,10 @@ public class GitHubLoginBindingUserConsumer : IConsumer<GitHubLoginBindingUserMq
 
         var discordUser = await _discordRestClient.GetUserAsync(m.DiscordUserId);
         await discordUser.SendMessageAsync(embed: embed);
+
+        await context.Publish(new GitHubLoginBindingUserOkMqo
+        {
+            CorrelationId = m.CorrelationId
+        });
     }
 }

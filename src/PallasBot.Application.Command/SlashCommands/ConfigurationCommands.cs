@@ -7,10 +7,11 @@ using PallasBot.Domain.Enums;
 
 namespace PallasBot.Application.Command.SlashCommands;
 
+[RequireOwner(Group = "Permission")]
+[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
 [Group("config", "Configuration commands")]
 public class ConfigurationCommands : InteractionModuleBase
 {
-    [RequireUserPermission(GuildPermission.Administrator)]
     [Group("set", "Set configurations")]
     public class ConfigurationSetPrefixCommands : InteractionModuleBase
     {
@@ -39,6 +40,28 @@ public class ConfigurationCommands : InteractionModuleBase
             });
 
             await RespondAsync($"Set MAA release channel to {channel.Name}, a test message will be sent to that channel.");
+        }
+
+        [SlashCommand("maa-team-role", "Set the role that will be given to MAA team members")]
+        public async Task SetMaaTeamRole(
+            [Summary(description: "The role that will be given to MAA team member.")] IRole role)
+        {
+            var guildId = Context.Guild.Id;
+
+            await _dynamicConfigurationService.SetAsync(guildId, DynamicConfigurationKey.MaaTeamMemberRoleId, role.Id.ToString());
+
+            await RespondAsync($"Set MAA team role to `{role.Name}`");
+        }
+
+        [SlashCommand("maa-contributor-role", "Set the role that will be given to MAA contributors")]
+        public async Task SetMaaContributorRole(
+            [Summary(description: "The role that will be given to MAA contributors.")] IRole role)
+        {
+            var guildId = Context.Guild.Id;
+
+            await _dynamicConfigurationService.SetAsync(guildId, DynamicConfigurationKey.MaaContributorRoleId, role.Id.ToString());
+
+            await RespondAsync($"Set MAA contributors role to `{role.Name}`");
         }
     }
 }

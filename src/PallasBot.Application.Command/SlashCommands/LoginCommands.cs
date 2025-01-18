@@ -25,7 +25,6 @@ public class LoginCommands : InteractionModuleBase
         _publishEndpoint = publishEndpoint;
     }
 
-    [RequireUserPermission(GuildPermission.ViewChannel)]
     [SlashCommand("github", "Login and bind your GitHub account")]
     public async Task LoginWithGitHubAsync()
     {
@@ -60,6 +59,7 @@ public class LoginCommands : InteractionModuleBase
         await _publishEndpoint.Publish(new GitHubLoginStartMqo
         {
             CorrelationId = Guid.NewGuid(),
+            GuildId = Context.Guild.Id,
             DiscordUserId = Context.User.Id,
             DeviceCode = resp.DeviceCode,
             UserCode = resp.UserCode,

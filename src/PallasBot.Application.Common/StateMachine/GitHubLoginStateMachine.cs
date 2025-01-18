@@ -38,6 +38,7 @@ public class GitHubLoginStateMachine : MassTransitStateMachine<GitHubLoginSaga>
             When(Start)
                 .Then(x =>
                 {
+                    x.Saga.GuildId = x.Message.GuildId;
                     x.Saga.DiscordUserId = x.Message.DiscordUserId;
                     x.Saga.DeviceCode = x.Message.DeviceCode;
                     x.Saga.UserCode = x.Message.UserCode;
@@ -77,6 +78,7 @@ public class GitHubLoginStateMachine : MassTransitStateMachine<GitHubLoginSaga>
                 .Publish(x => new GitHubLoginBindingUserMqo
                 {
                     CorrelationId = x.Saga.CorrelationId,
+                    GuildId = x.Saga.GuildId,
                     DiscordUserId = x.Saga.DiscordUserId,
                     AccessToken = x.Message.AccessToken
                 }));
@@ -84,6 +86,13 @@ public class GitHubLoginStateMachine : MassTransitStateMachine<GitHubLoginSaga>
         During(UserError, When(DmOk).Finalize());
         During(SystemError, When(DmOk).Finalize());
 
-        During(BindingUser, When(BindingUserOk).Finalize());
+        During(BindingUser,
+            When(BindingUserOk)
+                .Publish(x => new TryAssignMaaRoleMqo
+                {
+                    GuildId = x.Saga.GuildId,
+                    UserId = x.Saga.DiscordUserId
+                })
+                .Finalize());
     }
 }

@@ -8,6 +8,8 @@ public class GitHubLoginSaga : SagaStateMachineInstance
 
     public string CurrentState { get; set; } = string.Empty;
 
+    public ulong GuildId { get; set; }
+
     public ulong DiscordUserId { get; set; }
 
     public string DeviceCode { get; set; } = string.Empty;

@@ -2,5 +2,7 @@
 
 public enum DynamicConfigurationKey
 {
-    MaaReleaseNotificationChannel
+    MaaReleaseNotificationChannel,
+    MaaTeamMemberRoleId,
+    MaaContributorRoleId,
 }

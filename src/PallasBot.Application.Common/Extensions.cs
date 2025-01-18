@@ -11,6 +11,6 @@ public static class Extensions
     {
         builder.Services.AddSingleton<GitHubApiService>();
 
-        builder.Services.AddHostedService<GitHubOrganizationSyncJob>();
+        // builder.Services.AddHostedService<GitHubOrganizationSyncJob>();
     }
 }

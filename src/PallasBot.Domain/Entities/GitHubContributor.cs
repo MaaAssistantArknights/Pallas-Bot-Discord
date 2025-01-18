@@ -13,10 +13,4 @@ public record GitHubContributor
 
     [Column("is_team_member")]
     public bool IsTeamMember { get; set; }
-
-    [Column("is_team_leader")]
-    public bool IsTeamLeader { get; set; }
-
-    [Column("teams")]
-    public string[] Teams { get; set; } = [];
 }

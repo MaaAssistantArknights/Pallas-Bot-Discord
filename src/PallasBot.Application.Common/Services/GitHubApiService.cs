@@ -69,7 +69,7 @@ public class GitHubApiService
         return json;
     }
 
-    public async Task<GitHubAppAccessToken> GetGitHubAppAccessToken()
+    public async Task<GitHubAppAccessToken> GetGitHubAppAccessTokenAsync()
     {
         var jwt = await JwtUtils.GenerateGitHubAppJwtAsync(_options.ClientId, _options.PemFile);
         using var req = new GitHubHttpRequestBuilder()
@@ -102,19 +102,29 @@ public class GitHubApiService
 
     #region Organization
 
-    public async Task<List<GitHubUser>> GetOrganizationMembers(string org, string accessToken)
+    public async Task<List<GitHubUser>> GetOrganizationMembersAsync(string org, string accessToken)
     {
-        return await GetPaginatedResponse<GitHubUser>(
+        return await GetPaginatedResponseAsync<GitHubUser>(
             () => new GitHubHttpRequestBuilder()
                 .WithBearerAuth(accessToken)
                 .AcceptGitHubJson()
                 .WithLatestApiVersion(),
-            $"https://api.github.com/orgs/{org}/members");
+            $"https://api.github.com/orgs/{org}/members?per_page=100");
+    }
+
+    public async Task<List<GitHubUser>> GetRepoContributorsAsync(string org, string repo, string accessToken)
+    {
+        return await GetPaginatedResponseAsync<GitHubUser>(
+            () => new GitHubHttpRequestBuilder()
+                .WithBearerAuth(accessToken)
+                .AcceptGitHubJson()
+                .WithLatestApiVersion(),
+            $"https://api.github.com/repos/{org}/{repo}/contributors?per_page=100");
     }
 
     #endregion
 
-    private async Task<List<T>> GetPaginatedResponse<T>(Func<GitHubHttpRequestBuilder> requestBuilder, string url)
+    private async Task<List<T>> GetPaginatedResponseAsync<T>(Func<GitHubHttpRequestBuilder> requestBuilder, string url)
     {
         var nextUrl = url;
 

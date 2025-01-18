@@ -5,11 +5,11 @@ namespace PallasBot.Application.Command.SlashCommands;
 
 public class CommonCommands : InteractionModuleBase
 {
-    [RequireUserPermission(GuildPermission.Administrator)]
+    [RequireOwner(Group = "Permission")]
+    [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
     [SlashCommand("ping", "Test the responsiveness of the bot")]
     public async Task PingAsync()
     {
         await RespondAsync("pong!", ephemeral: true);
-        throw new InvalidOperationException("Test exception");
     }
 }

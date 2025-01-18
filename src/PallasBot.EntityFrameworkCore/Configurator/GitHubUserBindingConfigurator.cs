@@ -8,6 +8,6 @@ public class GitHubUserBindingConfigurator : IEntityTypeConfiguration<GitHubUser
 {
     public void Configure(EntityTypeBuilder<GitHubUserBinding> builder)
     {
-        builder.HasKey(x => new { x.DiscordUserId, x.GitHubUserId });
+        builder.HasKey(x => new { x.GuildId, x.DiscordUserId });
     }
 }

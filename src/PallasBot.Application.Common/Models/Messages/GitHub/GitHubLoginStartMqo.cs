@@ -4,6 +4,8 @@ public record GitHubLoginStartMqo
 {
     public required Guid CorrelationId { get; set; }
 
+    public required ulong GuildId { get; set; }
+
     public required ulong DiscordUserId { get; set; }
 
     public required string DeviceCode { get; set; }

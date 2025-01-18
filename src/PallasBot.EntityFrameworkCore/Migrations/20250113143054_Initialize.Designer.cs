@@ -11,8 +11,8 @@ using PallasBot.EntityFrameworkCore;
 namespace PallasBot.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(PallasBotDbContext))]
-    [Migration("20250110131222_AddGitHubUserBinding")]
-    partial class AddGitHubUserBinding
+    [Migration("20250113143054_Initialize")]
+    partial class Initialize
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23,6 +23,26 @@ namespace PallasBot.EntityFrameworkCore.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("PallasBot.Domain.Entities.DiscordUserRole", b =>
+                {
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("guild_id");
+
+                    b.Property<decimal>("UserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("user_id");
+
+                    b.PrimitiveCollection<decimal[]>("RoleIds")
+                        .IsRequired()
+                        .HasColumnType("numeric(20,0)[]")
+                        .HasColumnName("role_ids");
+
+                    b.HasKey("GuildId", "UserId");
+
+                    b.ToTable("discord_user_role");
+                });
 
             modelBuilder.Entity("PallasBot.Domain.Entities.DynamicConfiguration", b =>
                 {
@@ -44,22 +64,45 @@ namespace PallasBot.EntityFrameworkCore.Migrations
                     b.ToTable("dynamic_configuration");
                 });
 
+            modelBuilder.Entity("PallasBot.Domain.Entities.GitHubContributor", b =>
+                {
+                    b.Property<string>("GitHubLogin")
+                        .HasColumnType("text")
+                        .HasColumnName("github_login");
+
+                    b.Property<bool>("IsContributor")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_contributor");
+
+                    b.Property<bool>("IsTeamMember")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_team_member");
+
+                    b.HasKey("GitHubLogin");
+
+                    b.ToTable("github_contributors");
+                });
+
             modelBuilder.Entity("PallasBot.Domain.Entities.GitHubUserBinding", b =>
                 {
+                    b.Property<decimal>("GuildId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("guild_id");
+
                     b.Property<decimal>("DiscordUserId")
                         .HasColumnType("numeric(20,0)")
                         .HasColumnName("discord_user_id");
-
-                    b.Property<decimal>("GitHubUserId")
-                        .HasColumnType("numeric(20,0)")
-                        .HasColumnName("github_user_id");
 
                     b.Property<string>("GitHubLogin")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("github_login");
 
-                    b.HasKey("DiscordUserId", "GitHubUserId");
+                    b.Property<decimal>("GitHubUserId")
+                        .HasColumnType("numeric(20,0)")
+                        .HasColumnName("github_user_id");
+
+                    b.HasKey("GuildId", "DiscordUserId");
 
                     b.ToTable("github_user_binding");
                 });
