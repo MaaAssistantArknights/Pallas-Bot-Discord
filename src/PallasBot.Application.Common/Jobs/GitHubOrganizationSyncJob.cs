@@ -7,11 +7,12 @@ using PallasBot.Application.Common.Models.Messages;
 using PallasBot.Application.Common.Services;
 using PallasBot.Domain.Abstract;
 using PallasBot.Domain.Entities;
+using PallasBot.Domain.Extensions;
 using PallasBot.EntityFrameworkCore;
 
 namespace PallasBot.Application.Common.Jobs;
 
-public class GitHubOrganizationSyncJob : ScopedTimedBackgroundWorker
+public class GitHubOrganizationSyncJob : ScopedTimedBackgroundWorker<GitHubOrganizationSyncService>
 {
     public GitHubOrganizationSyncJob(ILoggerFactory loggerFactory, IServiceProvider serviceProvider)
         : base(
@@ -26,22 +27,46 @@ public class GitHubOrganizationSyncJob : ScopedTimedBackgroundWorker
 
     protected override string Name => nameof(GitHubOrganizationSyncJob);
 
-    protected override async Task ExecuteInScopeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(GitHubOrganizationSyncService service, CancellationToken cancellationToken)
     {
-        var gitHubApiService = serviceProvider.GetRequiredService<GitHubApiService>();
-        var dbContext = serviceProvider.GetRequiredService<PallasBotDbContext>();
-        var publishEndpoint = serviceProvider.GetRequiredService<IPublishEndpoint>();
+        await service.SyncOrganizationAsync(cancellationToken);
+    }
+}
 
-        Logger.LogInformation("GitHub organization sync job started");
+public class GitHubOrganizationSyncService
+{
+    private readonly GitHubApiService _gitHubApiService;
+    private readonly PallasBotDbContext _dbContext;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ILogger<GitHubOrganizationSyncService> _logger;
 
-        var accessToken = await gitHubApiService.GetGitHubAppAccessTokenAsync();
+    private const string OrganizationName = "MaaAssistantArknights";
+    private const string RepositoryName = "MaaAssistantArknights";
 
-        var members = await gitHubApiService.GetOrganizationMembersAsync("MaaAssistantArknights", accessToken.Token);
-        var contributors = await gitHubApiService.GetRepoContributorsAsync("MaaAssistantArknights", "MaaAssistantArknights", accessToken.Token);
+    public GitHubOrganizationSyncService(
+        GitHubApiService gitHubApiService,
+        IPublishEndpoint publishEndpoint,
+        PallasBotDbContext dbContext,
+        ILogger<GitHubOrganizationSyncService> logger)
+    {
+        _gitHubApiService = gitHubApiService;
+        _publishEndpoint = publishEndpoint;
+        _dbContext = dbContext;
+        _logger = logger;
+    }
 
-        var changes = await PersistGitHubOrganizationInfoAsync(dbContext, members, contributors);
+    public async Task SyncOrganizationAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("GitHub organization sync job started");
 
-        var msg = await dbContext.GitHubUserBindings
+        var accessToken = await _gitHubApiService.GetGitHubAppAccessTokenAsync();
+
+        var members = await _gitHubApiService.GetOrganizationMembersAsync(OrganizationName, accessToken.Token);
+        var contributors = await _gitHubApiService.GetRepoContributorsAsync(OrganizationName, RepositoryName, accessToken.Token);
+
+        var changes = await PersistGitHubOrganizationInfoAsync(members, contributors);
+
+        var msg = await _dbContext.GitHubUserBindings
             .Where(x => changes.Contains(x.GitHubLogin))
             .Select(x => new TryAssignMaaRoleMqo
             {
@@ -50,17 +75,17 @@ public class GitHubOrganizationSyncJob : ScopedTimedBackgroundWorker
             })
             .ToListAsync(cancellationToken);
 
-        await publishEndpoint.PublishBatch(msg, cancellationToken);
+        await _publishEndpoint.PublishBatch(msg, cancellationToken);
     }
 
-    private static async Task<List<string>> PersistGitHubOrganizationInfoAsync(PallasBotDbContext dbContext, List<GitHubUser> members, List<GitHubUser> contributors)
+    private async Task<List<string>> PersistGitHubOrganizationInfoAsync(List<GitHubUser> members, List<GitHubUser> contributors)
     {
         var logins = members.Select(x => x.Login)
             .Concat(contributors.Select(x => x.Login))
             .Distinct()
             .ToList();
 
-        var existingUsers = await dbContext.GitHubContributors
+        var existingUsers = await _dbContext.GitHubContributors
             .Where(x => logins.Contains(x.GitHubLogin))
             .ToListAsync();
 
@@ -101,15 +126,15 @@ public class GitHubOrganizationSyncJob : ScopedTimedBackgroundWorker
 
             if (isNew)
             {
-                await dbContext.GitHubContributors.AddAsync(user);
+                await _dbContext.GitHubContributors.AddAsync(user);
             }
             else
             {
-                dbContext.GitHubContributors.Update(user);
+                _dbContext.GitHubContributors.Update(user);
             }
         }
 
-        await dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
         return changes.Distinct().ToList();
     }

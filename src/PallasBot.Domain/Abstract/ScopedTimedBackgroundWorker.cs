@@ -1,81 +1,105 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace PallasBot.Domain.Abstract;
 
-public abstract class ScopedTimedBackgroundWorker : IHostedService, IDisposable
+[SuppressMessage("Design", "CA1031:Do not catch general exception types")]
+public abstract class ScopedTimedBackgroundWorker<TService> : IHostedService, IDisposable
+    where TService : notnull
 {
-    private readonly ScopedTimedBackgroundWorkerOptions _options;
     private readonly IServiceProvider _serviceProvider;
-    private readonly SemaphoreSlim _lock = new(1, 1);
+    private readonly ScopedTimedBackgroundWorkerOptions _options;
+    private readonly ILogger _logger;
 
     private PeriodicTimer? _periodicTimer;
 
-    protected CancellationToken CancellationToken { get; set; }
-    protected ILogger Logger { get; }
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly CancellationTokenSource _taskCancellationTokenSource = new();
+
+    protected CancellationToken ServiceCancellationToken { get; set; }
 
     protected ScopedTimedBackgroundWorker(
         ScopedTimedBackgroundWorkerOptions options,
         ILoggerFactory loggerFactory,
         IServiceProvider serviceProvider)
     {
-        _options = options;
         _serviceProvider = serviceProvider;
-
-        Logger = loggerFactory.CreateLogger("BackgroundWorker");
+        _options = options;
+        _logger = loggerFactory.CreateLogger("BackgroundWorker");
     }
 
     protected abstract string Name { get; }
-    protected abstract Task ExecuteInScopeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken);
+    protected abstract Task ExecuteAsync(TService service, CancellationToken cancellationToken);
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    private async Task ExecuteInScopeAsync(CancellationToken cancellationToken)
     {
-        CancellationToken = cancellationToken;
-        _periodicTimer = new PeriodicTimer(_options.Interval);
-        _ = Task.Run(async () =>
-        {
-            if (_options.RunOnStart)
-            {
-                await ExecuteAsync(cancellationToken);
-            }
-
-            while (await _periodicTimer.WaitForNextTickAsync(cancellationToken))
-            {
-                await ExecuteAsync(cancellationToken);
-            }
-        }, cancellationToken);
-
-        return Task.CompletedTask;
-    }
-
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        _periodicTimer?.Dispose();
-        return Task.CompletedTask;
-    }
-
-    private async Task ExecuteAsync(CancellationToken cancellationToken)
-    {
-        await _lock.WaitAsync(cancellationToken);
-        using var scope = _serviceProvider.CreateScope();
+        await _semaphore.WaitAsync(cancellationToken);
         try
         {
-            await ExecuteInScopeAsync(scope.ServiceProvider, cancellationToken);
+            using var scope = _serviceProvider.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<TService>();
+            await ExecuteAsync(service, cancellationToken);
         }
         catch (Exception e)
         {
-            Logger.LogError(e, "Error occurred while executing the background worker {WorkerName}", Name);
+            _logger.LogError(e, "Error occurred in the execution of job {Name}", Name);
         }
         finally
         {
-            _lock.Release();
+            _semaphore.Release();
         }
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        ServiceCancellationToken = cancellationToken;
+        _periodicTimer = new PeriodicTimer(_options.Interval);
+
+        _ = Task.Run(async () =>
+        {
+            _logger.LogInformation("Starting job {Name} {JobConfig}", Name, _options);
+
+            if (_options.RunOnStart)
+            {
+                _logger.LogInformation("Running job {Name} on start", Name);
+                await ExecuteInScopeAsync(_taskCancellationTokenSource.Token);
+            }
+
+            while (_periodicTimer is not null && _taskCancellationTokenSource.Token.IsCancellationRequested is false)
+            {
+                try
+                {
+                    await _periodicTimer.WaitForNextTickAsync(_taskCancellationTokenSource.Token);
+
+                    if (_taskCancellationTokenSource.Token.IsCancellationRequested is false)
+                    {
+                        _logger.LogInformation("Timer elapsed, running job {Name}", Name);
+                        await ExecuteInScopeAsync(_taskCancellationTokenSource.Token);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogInformation("Job {Name} was cancelled", Name);
+                    return;
+                }
+            }
+        }, ServiceCancellationToken);
+
+        return Task.CompletedTask;
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        await _taskCancellationTokenSource.CancelAsync();
+        _periodicTimer?.Dispose();
     }
 
     public void Dispose()
     {
         GC.SuppressFinalize(this);
+
         _periodicTimer?.Dispose();
     }
 }
