@@ -40,7 +40,8 @@ var postgresql = builder
 
 builder.AddProject<PallasBot_App_Bot>("bot")
     .WithReference(postgresql, "PostgreSQL")
-    .WithHttpsHealthCheck("/health");
+    .WithHttpsHealthCheck("/health")
+    .WaitFor(postgresql);
 
 var app = builder.Build();
 
