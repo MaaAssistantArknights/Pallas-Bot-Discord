@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using PallasBot.Aspire.ServiceDefaults.Utils;
 using Serilog;
+using Serilog.Filters;
 using Serilog.Sinks.OpenTelemetry;
 
 namespace PallasBot.Aspire.ServiceDefaults.Configurators;
@@ -17,6 +18,17 @@ internal static class LoggingConfigurator
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
                 .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture);
+
+            // string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar"];
+
+            cfg.Filter.ByExcluding(Matching.WithProperty<string>("RequestPath", p =>
+                p.StartsWith("/health", StringComparison.InvariantCultureIgnoreCase) ||
+                p.StartsWith("/alive", StringComparison.InvariantCultureIgnoreCase) ||
+                p.StartsWith("/metrics", StringComparison.InvariantCultureIgnoreCase) ||
+                p.StartsWith("/scalar", StringComparison.InvariantCultureIgnoreCase) ||
+                p.StartsWith("/openapi", StringComparison.InvariantCultureIgnoreCase) ||
+                p.StartsWith("/favicon", StringComparison.InvariantCultureIgnoreCase)
+            ));
 
             var otelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"] ??
                                builder.Configuration["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"];

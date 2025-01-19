@@ -18,6 +18,10 @@ internal static class OpenTelemetryConfigurator
         });
 
         var otelSvcName = builder.Configuration["OTEL_SERVICE_NAME"] ?? "Unknown";
+        var probabilityString = builder.Configuration["OTEL_TRACING_DEFAULT_PROBABILITY"];
+        var probability = Math.Clamp(
+            double.TryParse(probabilityString, out var parsed) ? parsed : 1.0,
+            0.0, 1.0);
 
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
@@ -32,6 +36,10 @@ internal static class OpenTelemetryConfigurator
                 if (builder.Environment.IsDevelopment())
                 {
                     tracing.SetSampler(new AlwaysOnSampler());
+                }
+                else
+                {
+                    tracing.SetSampler(new TraceIdRatioBasedSampler(probability));
                 }
 
                 tracing.AddSource(otelSvcName);
