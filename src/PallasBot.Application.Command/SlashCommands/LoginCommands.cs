@@ -8,6 +8,7 @@ using PallasBot.EntityFrameworkCore;
 
 namespace PallasBot.Application.Command.SlashCommands;
 
+[CommandContextType(InteractionContextType.Guild)]
 [Group("login", "Login commands")]
 public class LoginCommands : InteractionModuleBase
 {

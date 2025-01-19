@@ -8,8 +8,8 @@ using PallasBot.Domain.Extensions;
 
 namespace PallasBot.Application.Command.SlashCommands;
 
-[RequireOwner(Group = "Permission")]
-[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+[CommandContextType(InteractionContextType.Guild)]
+[DefaultMemberPermissions(GuildPermission.Administrator)]
 [Group("config", "Configuration commands")]
 public class ConfigurationCommands : InteractionModuleBase
 {

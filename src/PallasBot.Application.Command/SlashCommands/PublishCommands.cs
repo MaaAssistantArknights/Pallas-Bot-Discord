@@ -7,8 +7,8 @@ using PallasBot.Domain.Constants;
 
 namespace PallasBot.Application.Command.SlashCommands;
 
-[RequireOwner(Group = "Permission")]
-[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+[CommandContextType(InteractionContextType.Guild)]
+[DefaultMemberPermissions(GuildPermission.Administrator)]
 [Group("publish", "Publish mqo commands")]
 public class PublishCommands : InteractionModuleBase
 {

@@ -3,10 +3,10 @@ using Discord.Interactions;
 
 namespace PallasBot.Application.Command.SlashCommands;
 
+[CommandContextType(InteractionContextType.Guild)]
+[DefaultMemberPermissions(GuildPermission.Administrator)]
 public class CommonCommands : InteractionModuleBase
 {
-    [RequireOwner(Group = "Permission")]
-    [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
     [SlashCommand("ping", "Test the responsiveness of the bot")]
     public async Task PingAsync()
     {
