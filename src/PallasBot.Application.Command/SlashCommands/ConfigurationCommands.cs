@@ -4,6 +4,7 @@ using MassTransit;
 using PallasBot.Application.Common.Models.Messages;
 using PallasBot.Domain.Abstract;
 using PallasBot.Domain.Enums;
+using PallasBot.Domain.Extensions;
 
 namespace PallasBot.Application.Command.SlashCommands;
 
@@ -12,6 +13,13 @@ namespace PallasBot.Application.Command.SlashCommands;
 [Group("config", "Configuration commands")]
 public class ConfigurationCommands : InteractionModuleBase
 {
+    private readonly IDynamicConfigurationService _dynamicConfigurationService;
+
+    public ConfigurationCommands(IDynamicConfigurationService dynamicConfigurationService)
+    {
+        _dynamicConfigurationService = dynamicConfigurationService;
+    }
+
     [Group("set", "Set configurations")]
     public class ConfigurationSetPrefixCommands : InteractionModuleBase
     {
@@ -63,5 +71,27 @@ public class ConfigurationCommands : InteractionModuleBase
 
             await RespondAsync($"Set MAA contributors role to `{role.Name}`");
         }
+    }
+
+    [SlashCommand("list", "List configurations in current guild")]
+    public async Task GetConfigurationAsync()
+    {
+        var guildId = Context.Guild.Id;
+
+        var config = await _dynamicConfigurationService.GetAllByGuildAsync(guildId);
+
+        var embedBuilder = new EmbedBuilder()
+            .WithTitle("Current configurations")
+            .WithDescription("Current configurations in this guild")
+            .WithColor(Color.Blue);
+
+        foreach (var (k, v) in config)
+        {
+            embedBuilder.AddField(k.ToString("G"), k.Format(v));
+        }
+
+        var embed = embedBuilder.Build();
+
+        await RespondAsync(embed: embed);
     }
 }

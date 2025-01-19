@@ -14,6 +14,15 @@ public class DynamicConfigurationService : IDynamicConfigurationService
         _pallasBotDbContext = pallasBotDbContext;
     }
 
+    public async Task<Dictionary<DynamicConfigurationKey, string>> GetAllByGuildAsync(ulong guildId)
+    {
+        var configs = await _pallasBotDbContext.DynamicConfigurations
+            .Where(x => x.GuildId == guildId)
+            .ToListAsync();
+        return configs
+            .ToDictionary(x => x.Key, x => x.Value);
+    }
+
     public async Task<string?> GetByGuildAsync(ulong guildId, DynamicConfigurationKey key)
     {
         return await _pallasBotDbContext.DynamicConfigurations
