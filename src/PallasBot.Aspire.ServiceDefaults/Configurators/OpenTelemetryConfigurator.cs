@@ -94,8 +94,8 @@ internal static class OpenTelemetryConfigurator
     private static void AddOpenTelemetryExporters(this IHostApplicationBuilder builder)
     {
         var genericOtelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-        var meterOtelEndpoint = builder.Configuration["OTEL_EXPORTER_METRICS_ENDPOINT"];
-        var tracingOtelEndpoint = builder.Configuration["OTEL_EXPORTER_TRACING_ENDPOINT"];
+        var meterOtelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"];
+        var tracingOtelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_TRACING_ENDPOINT"];
 
         if (string.IsNullOrEmpty(genericOtelEndpoint ?? meterOtelEndpoint) is false)
         {
