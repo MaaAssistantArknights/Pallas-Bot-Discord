@@ -34,7 +34,7 @@ public class ConfigurationCommands : InteractionModuleBase
 
         [SlashCommand("maa-release-channel", "Set which channel to post MAA releases")]
         public async Task SetMaaReleaseChannel(
-            [Summary(description: "The channel to post MAA releases. Should be a Text channel."), ChannelTypes(ChannelType.Text)] IChannel channel)
+            [Summary(description: "The channel to post MAA releases. Should be a Text channel."), ChannelTypes(ChannelType.Text, ChannelType.News)] IChannel channel)
         {
             var guildId = Context.Guild.Id;
             var channelId = channel.Id;
