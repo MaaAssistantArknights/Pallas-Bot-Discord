@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -45,8 +46,8 @@ namespace PallasBot.EntityFrameworkCore.Migrations
                 columns: table => new
                 {
                     github_login = table.Column<string>(type: "text", nullable: false),
-                    is_contributor = table.Column<bool>(type: "boolean", nullable: false),
-                    is_organization_member = table.Column<bool>(type: "boolean", nullable: false)
+                    is_organization_member = table.Column<bool>(type: "boolean", nullable: false),
+                    contribute_to = table.Column<List<string>>(type: "text[]", nullable: false)
                 },
                 constraints: table =>
                 {
