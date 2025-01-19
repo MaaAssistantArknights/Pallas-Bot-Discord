@@ -3,6 +3,30 @@ services:
     image: ghcr.io/maaassistantarknights/pallasbotdiscord:latest
     container_name: pallas-bot-discord
     restart: unless-stopped
+    ports:
+      - "8080:80"
     environment:
-      - ConnectionStrings__PostgreSQL=
+      - ConnectionStrings__PostgreSQL=Host=db;Port=5432;Database=pallasbot;Username=postgres;Password=postgres
       - Discord__BotToken=
+      - GitHub__ClientId=
+      - GitHub__InstallationId=
+      - GitHub__PemFile=/app/github-app-private-key.pem
+      # Telemetry Options, read more at https://opentelemetry.io/docs/languages/sdk-configuration/
+      - OTEL_TRACING_DEFAULT_PROBABILITY=1.0
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    volumes:
+      - ./private-key.pem:/app/github-app-private-key.pem
+
+  db:
+    image: postgres:17.2
+    container_name: pallas-bot-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=pallasbot
+    volumes:
+      - pallas-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  pallas-postgres-data:
