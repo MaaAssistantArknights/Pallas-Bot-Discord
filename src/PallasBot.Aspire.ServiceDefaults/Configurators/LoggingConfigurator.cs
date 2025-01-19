@@ -17,7 +17,15 @@ internal static class LoggingConfigurator
                 .ReadFrom.Configuration(builder.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
-                .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture);
+                .WriteTo.Async(x => x.Console());
+
+            // This is just a simple approach to configure
+            // Configurations from the IConfiguration still can be used if leave it empty
+            var writeToFile = builder.Configuration["SERILOG_WRITE_TO_FILE"];
+            if (string.IsNullOrEmpty(writeToFile) is false)
+            {
+                cfg.WriteTo.File(writeToFile, rollingInterval: RollingInterval.Day);
+            }
 
             // string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar"];
 
