@@ -24,7 +24,7 @@ public class AssignDiscordRoleConsumer : IConsumer<AssignDiscordRoleMqo>
 
         try
         {
-            if (m.RoleIds.Count == 0)
+            if (m.ShouldAssignRoleIds.Count == 0 && m.ShouldRemoveRoleIds.Count == 0)
             {
                 return;
             }
@@ -37,20 +37,26 @@ public class AssignDiscordRoleConsumer : IConsumer<AssignDiscordRoleMqo>
                 return;
             }
 
-            if (user.RoleIds.All(x => m.RoleIds.Contains(x)))
+            var roleIds = user.RoleIds ?? [];
+
+            var assignRole = m.ShouldAssignRoleIds.Except(roleIds).ToArray();
+            var removeRole = m.ShouldRemoveRoleIds.Intersect(roleIds).ToArray();
+
+            if (assignRole.Length > 0)
             {
-                return;
+                await user.AddRolesAsync(assignRole);
             }
 
-            await user.AddRolesAsync(m.RoleIds);
-
-            var userVerify = await _discordRestClient.GetGuildUserAsync(m.GuildId, m.UserId);
+            if (removeRole.Length > 0)
+            {
+                await user.RemoveRolesAsync(removeRole);
+            }
 
             await context.Publish(new CacheDiscordUserRoleMqo
             {
                 UserId = m.UserId,
                 GuildId = m.GuildId,
-                RoleIds = [.. userVerify.RoleIds]
+                ReadFromApi = true,
             });
         }
         catch (Exception e)

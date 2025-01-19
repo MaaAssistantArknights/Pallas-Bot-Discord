@@ -1,7 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PallasBot.Application.Common.Models.GitHub;
 using PallasBot.Application.Common.Models.Messages;
 using PallasBot.Application.Common.Models.Messages.Jobs;
 using PallasBot.Application.Common.Services;
@@ -36,71 +35,21 @@ public class SyncGitHubOrganizationConsumer : IConsumer<SyncGitHubOrganizationMq
 
         var accessToken = await _gitHubApiService.GetGitHubAppAccessTokenAsync();
 
-        var members = await _gitHubApiService.GetOrganizationMembersAsync(MaaConstants.Organization, accessToken.Token);
-        var contributors = new List<GitHubUser>();
+        var changes = new List<string>();
+
+        if (m.SyncMembers)
+        {
+            var syncMembersChanges = await SyncMembersAsync(accessToken.Token);
+            changes.AddRange(syncMembersChanges);
+        }
+
         foreach (var repository in m.Repositories)
         {
-            var repositoryContributors = await _gitHubApiService.GetRepoContributorsAsync(
-                MaaConstants.Organization, repository, accessToken.Token);
-            contributors.AddRange(repositoryContributors);
-        }
-        contributors = contributors.DistinctBy(x => x.Login).ToList();
-
-        var logins = members.Select(x => x.Login)
-            .Concat(contributors.Select(x => x.Login))
-            .Distinct()
-            .ToList();
-
-        var existingUsers = await _dbContext.GitHubContributors
-            .Where(x => logins.Contains(x.GitHubLogin))
-            .ToListAsync();
-
-        var changes = new List<string>();
-        foreach (var login in logins)
-        {
-            var isNew = false;
-            var user = existingUsers.FirstOrDefault(x => x.GitHubLogin == login);
-            if (user is null)
-            {
-                isNew = true;
-                changes.Add(login);
-                user = new GitHubContributor
-                {
-                    GitHubLogin = login,
-                };
-            }
-
-            var member = members.FirstOrDefault(x => x.Login == login);
-            if (member is not null)
-            {
-                if (user.IsOrganizationMember is false)
-                {
-                    changes.Add(member.Login);
-                }
-                user.IsOrganizationMember = true;
-            }
-
-            var contributor = contributors.FirstOrDefault(x => x.Login == login);
-            if (contributor is not null)
-            {
-                if (user.IsContributor is false)
-                {
-                    changes.Add(contributor.Login);
-                }
-                user.IsContributor = true;
-            }
-
-            if (isNew)
-            {
-                await _dbContext.GitHubContributors.AddAsync(user);
-            }
-            else
-            {
-                _dbContext.GitHubContributors.Update(user);
-            }
+            var syncRepoChanges = await SyncRepositoryAsync(repository, accessToken.Token);
+            changes.AddRange(syncRepoChanges);
         }
 
-        await _dbContext.SaveChangesAsync();
+        changes = changes.Distinct().ToList();
 
         var msg = await _dbContext.GitHubUserBindings
             .Where(x => changes.Contains(x.GitHubLogin))
@@ -111,6 +60,114 @@ public class SyncGitHubOrganizationConsumer : IConsumer<SyncGitHubOrganizationMq
             })
             .ToListAsync();
 
+        _logger.LogInformation("GitHub organization sync job completed, unique changes: {Changes}, role assign mqo sent: {MqoCount}",
+            changes.Count, msg.Count);
+
         await context.PublishBatch(msg);
+    }
+
+    private async Task<List<string>> SyncMembersAsync(string accessToken)
+    {
+        var members = await _gitHubApiService.GetOrganizationMembersAsync(MaaConstants.Organization, accessToken);
+
+        var userLogins = members.Select(x => x.Login).ToList();
+
+        var changes = new List<string>();
+
+        var existingUsers = await _dbContext.GitHubContributors
+            .Where(x => userLogins.Contains(x.GitHubLogin) && x.IsOrganizationMember == false)
+            .ToListAsync();
+
+        foreach (var login in userLogins)
+        {
+            var user = existingUsers.FirstOrDefault(x => x.GitHubLogin == login);
+
+            if (user is null)
+            {
+                _dbContext.GitHubContributors.Add(new GitHubContributor
+                {
+                    GitHubLogin = login,
+                    IsOrganizationMember = true
+                });
+            }
+            else
+            {
+                user.IsOrganizationMember = true;
+                _dbContext.GitHubContributors.Update(user);
+            }
+
+            changes.Add(login);
+        }
+
+        var existingUsersToRemove = await _dbContext.GitHubContributors
+            .Where(x => userLogins.Contains(x.GitHubLogin) == false && x.IsOrganizationMember)
+            .ToListAsync();
+        foreach (var user in existingUsersToRemove)
+        {
+            user.IsOrganizationMember = false;
+            _dbContext.GitHubContributors.Update(user);
+            changes.Add(user.GitHubLogin);
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return changes.Distinct().ToList();
+    }
+
+    private async Task<List<string>> SyncRepositoryAsync(string repository, string accessToken)
+    {
+        var contributors = await _gitHubApiService
+            .GetRepoContributorsAsync(MaaConstants.Organization, repository, accessToken);
+
+        var userLogins = contributors.Select(x => x.Login).ToList();
+
+        var existingUsers = await _dbContext.GitHubContributors
+            .Where(x => userLogins.Contains(x.GitHubLogin) && x.ContributeTo.Contains(repository) == false)
+            .ToListAsync();
+
+        var changes = new List<string>();
+        foreach (var login in userLogins)
+        {
+            var user = existingUsers.FirstOrDefault(x => x.GitHubLogin == login);
+
+            if (user is null)
+            {
+                var c = new GitHubContributor
+                {
+                    GitHubLogin = login,
+                };
+                c.AddContribution(repository);
+                await _dbContext.GitHubContributors.AddAsync(c);
+            }
+            else
+            {
+                user.AddContribution(repository);
+                _dbContext.GitHubContributors.Update(user);
+            }
+
+            changes.Add(login);
+        }
+
+        var existingUsersToRemove = await _dbContext.GitHubContributors
+            .Where(x => userLogins.Contains(x.GitHubLogin) == false && x.ContributeTo.Contains(repository))
+            .ToListAsync();
+        foreach (var user in existingUsersToRemove)
+        {
+            user.RemoveContribution(repository);
+            _dbContext.GitHubContributors.Update(user);
+            changes.Add(user.GitHubLogin);
+        }
+
+        await _dbContext.SaveChangesAsync();
+
+        return changes.Distinct().ToList();
+    }
+}
+
+public class SyncGitHubOrganizationConsumerDefinition : ConsumerDefinition<SyncGitHubOrganizationConsumer>
+{
+    public SyncGitHubOrganizationConsumerDefinition()
+    {
+        ConcurrentMessageLimit = 1;
     }
 }

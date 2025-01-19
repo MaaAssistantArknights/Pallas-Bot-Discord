@@ -2,9 +2,11 @@
 
 public record CacheDiscordUserRoleMqo
 {
-    public ulong GuildId { get; set; }
+    public required ulong GuildId { get; set; }
 
-    public ulong UserId { get; set; }
+    public required ulong UserId { get; set; }
+
+    public required bool ReadFromApi { get; set; }
 
     public List<ulong> RoleIds { get; set; } = [];
 }

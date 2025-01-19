@@ -31,7 +31,7 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
         var memberRoleId = await _dynamicConfigurationService.GetByGuildAsync(m.GuildId, DynamicConfigurationKey.MaaOrganizationMemberRoleId);
         var contributorRoleId = await _dynamicConfigurationService.GetByGuildAsync(m.GuildId, DynamicConfigurationKey.MaaContributorRoleId);
 
-        if (memberRoleId is null || contributorRoleId is null || ulong.TryParse(memberRoleId, out _) is false || ulong.TryParse(contributorRoleId, out _) is false)
+        if (memberRoleId is null || contributorRoleId is null)
         {
             return;
         }
@@ -41,22 +41,16 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
 
         var githubUser = await _pallasBotDbContext.GitHubUserBindings
             .Where(x => x.GuildId == m.GuildId && x.DiscordUserId == m.UserId)
-            .Join(
-                _pallasBotDbContext.GitHubContributors,
-                x => x.GitHubLogin,
-                x => x.GitHubLogin,
-                (x, y) => new { x.GuildId, x.DiscordUserId, y.GitHubLogin, IsTeamMember = y.IsOrganizationMember, y.IsContributor }
-            )
             .FirstOrDefaultAsync();
-
-        // ReSharper disable once ConvertIfStatementToSwitchStatement
         if (githubUser is null)
         {
-            _logger.LogWarning("User {UserId} is not bound to a GitHub account", m.UserId);
             return;
         }
 
-        if (githubUser is { IsTeamMember: false, IsContributor: false })
+        var githubContribution = await _pallasBotDbContext.GitHubContributors
+            .Where(x => x.GitHubLogin == githubUser.GitHubLogin)
+            .FirstOrDefaultAsync();
+        if (githubContribution is null)
         {
             return;
         }
@@ -71,13 +65,34 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
             UserId = m.UserId
         };
 
-        if (githubUser.IsTeamMember && cacheRoleIds.Contains(memberRole) is false)
+        if (githubContribution.IsOrganizationMember)
         {
-            msg.RoleIds.Add(memberRole);
+            if (cacheRoleIds.Contains(memberRole) is false)
+            {
+                msg.ShouldAssignRoleIds.Add(memberRole);
+            }
         }
-        if (githubUser.IsContributor && cacheRoleIds.Contains(contributorRole) is false)
+        else
         {
-            msg.RoleIds.Add(memberRole);
+            if (cacheRoleIds.Contains(memberRole))
+            {
+                msg.ShouldRemoveRoleIds.Add(memberRole);
+            }
+        }
+
+        if (githubContribution.ContributeTo.Count > 0)
+        {
+            if (cacheRoleIds.Contains(contributorRole) is false)
+            {
+                msg.ShouldAssignRoleIds.Add(contributorRole);
+            }
+        }
+        else
+        {
+            if (cacheRoleIds.Contains(contributorRole))
+            {
+                msg.ShouldRemoveRoleIds.Add(contributorRole);
+            }
         }
 
         await context.Publish(msg);

@@ -6,5 +6,7 @@ public record AssignDiscordRoleMqo
 
     public required ulong UserId { get; set; }
 
-    public List<ulong> RoleIds { get; set; } = [];
+    public List<ulong> ShouldAssignRoleIds { get; set; } = [];
+
+    public List<ulong> ShouldRemoveRoleIds { get; set; } = [];
 }
