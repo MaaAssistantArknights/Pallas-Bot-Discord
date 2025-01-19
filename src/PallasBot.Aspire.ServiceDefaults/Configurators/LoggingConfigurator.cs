@@ -1,7 +1,7 @@
-﻿using System.Globalization;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using PallasBot.Aspire.ServiceDefaults.Utils;
 using Serilog;
+using Serilog.Events;
 using Serilog.Filters;
 using Serilog.Sinks.OpenTelemetry;
 
@@ -13,8 +13,15 @@ internal static class LoggingConfigurator
     {
         builder.Services.AddSerilog(cfg =>
         {
+            if (builder.Environment.IsProduction())
+            {
+                cfg.MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
+                cfg.MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information);
+                cfg.MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning);
+                cfg.MinimumLevel.Override("System.Net.Http.HttpClient", LogEventLevel.Warning);
+            }
+
             cfg
-                .ReadFrom.Configuration(builder.Configuration)
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
                 .WriteTo.Async(x => x.Console());
@@ -84,6 +91,8 @@ internal static class LoggingConfigurator
                     options.ResourceAttributes["service.name"] = serviceName;
                 }
             });
+
+            cfg.ReadFrom.Configuration(builder.Configuration);
         });
     }
 }
