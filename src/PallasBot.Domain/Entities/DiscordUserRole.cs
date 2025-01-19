@@ -13,4 +13,7 @@ public record DiscordUserRole
 
     [Column("role_ids")]
     public List<ulong> RoleIds { get; set; } = [];
+
+    [Column("update_at")]
+    public DateTimeOffset UpdateAt { get; set; }
 }

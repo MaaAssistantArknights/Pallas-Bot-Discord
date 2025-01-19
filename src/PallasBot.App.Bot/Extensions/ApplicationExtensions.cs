@@ -2,7 +2,6 @@
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using PallasBot.Application.Common.Models;
 using PallasBot.Application.Common.Models.Messages;
 using PallasBot.EntityFrameworkCore;
 

@@ -38,8 +38,9 @@ public class ConfigurationCommands : InteractionModuleBase
         {
             var guildId = Context.Guild.Id;
             var channelId = channel.Id;
+            var invoker = Context.User.Id;
 
-            await _dynamicConfigurationService.SetAsync(guildId, DynamicConfigurationKey.MaaReleaseNotificationChannel, channelId.ToString());
+            await _dynamicConfigurationService.SetAsync(guildId, DynamicConfigurationKey.MaaReleaseNotificationChannel, channelId.ToString(), invoker);
 
             await _publishEndpoint.Publish(new SendTextMessageMqo
             {
@@ -50,15 +51,16 @@ public class ConfigurationCommands : InteractionModuleBase
             await RespondAsync($"Set MAA release channel to {channel.Name}, a test message will be sent to that channel.");
         }
 
-        [SlashCommand("maa-team-role", "Set the role that will be given to MAA team members")]
+        [SlashCommand("maa-member-role", "Set the role that will be given to MAA organization members")]
         public async Task SetMaaTeamRole(
-            [Summary(description: "The role that will be given to MAA team member.")] IRole role)
+            [Summary(description: "The role that will be given to MAA organization member.")] IRole role)
         {
             var guildId = Context.Guild.Id;
+            var invoker = Context.User.Id;
 
-            await _dynamicConfigurationService.SetAsync(guildId, DynamicConfigurationKey.MaaTeamMemberRoleId, role.Id.ToString());
+            await _dynamicConfigurationService.SetAsync(guildId, DynamicConfigurationKey.MaaOrganizationMemberRoleId, role.Id.ToString(), invoker);
 
-            await RespondAsync($"Set MAA team role to `{role.Name}`");
+            await RespondAsync($"Set MAA organization role to `{role.Name}`");
         }
 
         [SlashCommand("maa-contributor-role", "Set the role that will be given to MAA contributors")]
@@ -66,8 +68,9 @@ public class ConfigurationCommands : InteractionModuleBase
             [Summary(description: "The role that will be given to MAA contributors.")] IRole role)
         {
             var guildId = Context.Guild.Id;
+            var invoker = Context.User.Id;
 
-            await _dynamicConfigurationService.SetAsync(guildId, DynamicConfigurationKey.MaaContributorRoleId, role.Id.ToString());
+            await _dynamicConfigurationService.SetAsync(guildId, DynamicConfigurationKey.MaaContributorRoleId, role.Id.ToString(), invoker);
 
             await RespondAsync($"Set MAA contributors role to `{role.Name}`");
         }

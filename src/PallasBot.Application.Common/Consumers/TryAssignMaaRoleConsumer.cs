@@ -28,7 +28,7 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
     {
         var m = context.Message;
 
-        var memberRoleId = await _dynamicConfigurationService.GetByGuildAsync(m.GuildId, DynamicConfigurationKey.MaaTeamMemberRoleId);
+        var memberRoleId = await _dynamicConfigurationService.GetByGuildAsync(m.GuildId, DynamicConfigurationKey.MaaOrganizationMemberRoleId);
         var contributorRoleId = await _dynamicConfigurationService.GetByGuildAsync(m.GuildId, DynamicConfigurationKey.MaaContributorRoleId);
 
         if (memberRoleId is null || contributorRoleId is null || ulong.TryParse(memberRoleId, out _) is false || ulong.TryParse(contributorRoleId, out _) is false)
@@ -45,7 +45,7 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
                 _pallasBotDbContext.GitHubContributors,
                 x => x.GitHubLogin,
                 x => x.GitHubLogin,
-                (x, y) => new { x.GuildId, x.DiscordUserId, y.GitHubLogin, y.IsTeamMember, y.IsContributor }
+                (x, y) => new { x.GuildId, x.DiscordUserId, y.GitHubLogin, IsTeamMember = y.IsOrganizationMember, y.IsContributor }
             )
             .FirstOrDefaultAsync();
 

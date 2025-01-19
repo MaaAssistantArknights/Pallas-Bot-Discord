@@ -14,4 +14,10 @@ public record DynamicConfiguration
 
     [Column("value")]
     public string Value { get; set; } = string.Empty;
+
+    [Column("update_at")]
+    public DateTimeOffset UpdateAt { get; set; }
+
+    [Column("update_by")]
+    public ulong UpdateBy { get; set; }
 }

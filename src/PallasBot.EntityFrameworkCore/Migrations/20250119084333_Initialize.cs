@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -16,7 +17,8 @@ namespace PallasBot.EntityFrameworkCore.Migrations
                 {
                     guild_id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     user_id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
-                    role_ids = table.Column<decimal[]>(type: "numeric(20,0)[]", nullable: false)
+                    role_ids = table.Column<decimal[]>(type: "numeric(20,0)[]", nullable: false),
+                    update_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -29,7 +31,9 @@ namespace PallasBot.EntityFrameworkCore.Migrations
                 {
                     guild_id = table.Column<decimal>(type: "numeric(20,0)", nullable: false),
                     key = table.Column<string>(type: "text", nullable: false),
-                    value = table.Column<string>(type: "text", nullable: false)
+                    value = table.Column<string>(type: "text", nullable: false),
+                    update_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    update_by = table.Column<decimal>(type: "numeric(20,0)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -42,7 +46,7 @@ namespace PallasBot.EntityFrameworkCore.Migrations
                 {
                     github_login = table.Column<string>(type: "text", nullable: false),
                     is_contributor = table.Column<bool>(type: "boolean", nullable: false),
-                    is_team_member = table.Column<bool>(type: "boolean", nullable: false)
+                    is_organization_member = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {

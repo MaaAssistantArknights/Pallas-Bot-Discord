@@ -40,13 +40,17 @@ public class DynamicConfigurationService : IDynamicConfigurationService
             .ToDictionary(x => x.GuildId, x => x.Value);
     }
 
-    public async Task SetAsync(ulong guildId, DynamicConfigurationKey key, string value)
+    public async Task SetAsync(ulong guildId, DynamicConfigurationKey key, string value, ulong updateBy)
     {
+        var now = DateTimeOffset.UtcNow;
+
         var existing = _pallasBotDbContext.DynamicConfigurations
             .FirstOrDefault(x => x.GuildId == guildId && x.Key == key);
         if (existing is not null)
         {
             existing.Value = value;
+            existing.UpdateAt = now;
+            existing.UpdateBy = updateBy;
             _pallasBotDbContext.DynamicConfigurations.Update(existing);
         }
         else
@@ -55,7 +59,9 @@ public class DynamicConfigurationService : IDynamicConfigurationService
             {
                 GuildId = guildId,
                 Key = key,
-                Value = value
+                Value = value,
+                UpdateAt = now,
+                UpdateBy = updateBy
             });
         }
 

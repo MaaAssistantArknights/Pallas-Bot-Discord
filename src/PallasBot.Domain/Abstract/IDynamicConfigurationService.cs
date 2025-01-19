@@ -10,5 +10,5 @@ public interface IDynamicConfigurationService
 
     public Task<Dictionary<ulong, string>> GetAllAsync(DynamicConfigurationKey key);
 
-    public Task SetAsync(ulong guildId, DynamicConfigurationKey key, string value);
+    public Task SetAsync(ulong guildId, DynamicConfigurationKey key, string value, ulong updateBy);
 }

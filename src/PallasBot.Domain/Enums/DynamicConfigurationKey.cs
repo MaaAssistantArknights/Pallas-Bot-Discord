@@ -8,7 +8,7 @@ public enum DynamicConfigurationKey
     MaaReleaseNotificationChannel,
 
     [DynamicConfigurationType(DynamicConfigurationType.Role)]
-    MaaTeamMemberRoleId,
+    MaaOrganizationMemberRoleId,
 
     [DynamicConfigurationType(DynamicConfigurationType.Role)]
     MaaContributorRoleId,

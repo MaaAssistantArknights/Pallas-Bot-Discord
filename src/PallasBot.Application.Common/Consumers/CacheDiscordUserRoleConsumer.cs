@@ -18,6 +18,7 @@ public record CacheDiscordUserRoleConsumer : IConsumer<CacheDiscordUserRoleMqo>
     public async Task Consume(ConsumeContext<CacheDiscordUserRoleMqo> context)
     {
         var m = context.Message;
+        var now = DateTimeOffset.UtcNow;
 
         var existing = await _pallasBotDbContext.DiscordUserRoles
             .FirstOrDefaultAsync(x => x.GuildId == m.GuildId && x.UserId == m.UserId);
@@ -28,12 +29,14 @@ public record CacheDiscordUserRoleConsumer : IConsumer<CacheDiscordUserRoleMqo>
             {
                 GuildId = m.GuildId,
                 UserId = m.UserId,
-                RoleIds = m.RoleIds
+                RoleIds = m.RoleIds,
+                UpdateAt = now
             });
         }
         else
         {
             existing.RoleIds = m.RoleIds;
+            existing.UpdateAt = now;
             _pallasBotDbContext.DiscordUserRoles.Update(existing);
         }
 

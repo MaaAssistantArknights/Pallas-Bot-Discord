@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using PallasBot.Application.Common.Jobs;
 using PallasBot.Application.Common.Services;
-using PallasBot.Domain.Extensions;
 
 namespace PallasBot.Application.Common;
 
@@ -12,6 +11,6 @@ public static class Extensions
     {
         builder.Services.AddSingleton<GitHubApiService>();
 
-        builder.Services.AddScopedTimedBackgroundWorker<GitHubOrganizationSyncJob, GitHubOrganizationSyncService>();
+        builder.Services.AddHostedService<SyncGitHubOrganizationJob>();
     }
 }

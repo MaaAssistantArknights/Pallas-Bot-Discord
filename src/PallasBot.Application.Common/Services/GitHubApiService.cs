@@ -13,6 +13,9 @@ public class GitHubApiService
     private readonly HttpClient _client;
     private readonly GitHubOptions _options;
 
+    // This service is Singleton so it's safe to cache the token here
+    private GitHubAppAccessToken? _gitHubAppAccessTokenCache;
+
     public GitHubApiService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _client = httpClientFactory.CreateClient("Default");
@@ -71,6 +74,11 @@ public class GitHubApiService
 
     public async Task<GitHubAppAccessToken> GetGitHubAppAccessTokenAsync()
     {
+        if (_gitHubAppAccessTokenCache is not null && _gitHubAppAccessTokenCache.ExpiresAt > DateTimeOffset.UtcNow.AddMinutes(30))
+        {
+            return _gitHubAppAccessTokenCache;
+        }
+
         var jwt = await JwtUtils.GenerateGitHubAppJwtAsync(_options.ClientId, _options.PemFile);
         using var req = new GitHubHttpRequestBuilder()
             .Post($"https://api.github.com/app/installations/{_options.InstallationId}/access_tokens")
@@ -79,7 +87,9 @@ public class GitHubApiService
             .WithLatestApiVersion()
             .Build();
 
-        return await SendRequest<GitHubAppAccessToken>(req);
+        var result = await SendRequest<GitHubAppAccessToken>(req);
+        _gitHubAppAccessTokenCache = result;
+        return result;
     }
 
     #endregion

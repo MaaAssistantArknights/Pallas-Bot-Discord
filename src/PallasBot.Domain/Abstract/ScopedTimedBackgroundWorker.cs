@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using PallasBot.Domain.Constants;
 
 namespace PallasBot.Domain.Abstract;
 
@@ -18,7 +19,7 @@ public abstract class ScopedTimedBackgroundWorker<TService> : IHostedService, ID
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly CancellationTokenSource _taskCancellationTokenSource = new();
 
-    protected CancellationToken ServiceCancellationToken { get; set; }
+    private CancellationToken ServiceCancellationToken { get; set; }
 
     protected ScopedTimedBackgroundWorker(
         ScopedTimedBackgroundWorkerOptions options,
@@ -36,6 +37,7 @@ public abstract class ScopedTimedBackgroundWorker<TService> : IHostedService, ID
     private async Task ExecuteInScopeAsync(CancellationToken cancellationToken)
     {
         await _semaphore.WaitAsync(cancellationToken);
+        var activity = ActivitySources.AppActivitySource.StartActivity($"Job {Name}");
         try
         {
             using var scope = _serviceProvider.CreateScope();
@@ -48,6 +50,7 @@ public abstract class ScopedTimedBackgroundWorker<TService> : IHostedService, ID
         }
         finally
         {
+            activity?.Dispose();
             _semaphore.Release();
         }
     }

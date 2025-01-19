@@ -11,6 +11,6 @@ public record GitHubContributor
     [Column("is_contributor")]
     public bool IsContributor { get; set; }
 
-    [Column("is_team_member")]
-    public bool IsTeamMember { get; set; }
+    [Column("is_organization_member")]
+    public bool IsOrganizationMember { get; set; }
 }
