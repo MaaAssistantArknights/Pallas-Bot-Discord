@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using PallasBot.Aspire.ServiceDefaults.Internal;
 using PallasBot.Aspire.ServiceDefaults.Utils;
 
 namespace PallasBot.Aspire.ServiceDefaults.Configurators;
@@ -11,25 +14,29 @@ internal static class OpenTelemetryConfigurator
 {
     internal static void ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
     {
-        builder.Logging.AddOpenTelemetry(logging =>
+        builder.Logging.ClearProviders();
+        builder.Logging.AddOpenTelemetry(options =>
         {
-            logging.IncludeFormattedMessage = true;
-            logging.IncludeScopes = true;
+            options.IncludeScopes = true;
+            options.IncludeFormattedMessage = true;
         });
 
-        var otelSvcName = builder.Configuration["OTEL_SERVICE_NAME"] ?? "Unknown";
-        var probabilityString = builder.Configuration["OTEL_TRACING_DEFAULT_PROBABILITY"];
-        var probability = Math.Clamp(
-            double.TryParse(probabilityString, out var parsed) ? parsed : 1.0,
-            0.0, 1.0);
+        builder.Services.AddSingleton<InternalResourceDetector>();
+
+        var resourceBuilder = ResourceBuilder.CreateEmpty()
+            .AddDetector(sp => sp.GetRequiredService<InternalResourceDetector>());
 
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
+                metrics.SetResourceBuilder(resourceBuilder);
+
                 metrics
                     .AddRuntimeInstrumentation()
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation();
+
+                metrics.AddOtlpExporter();
             })
             .WithTracing(tracing =>
             {
@@ -37,12 +44,6 @@ internal static class OpenTelemetryConfigurator
                 {
                     tracing.SetSampler(new AlwaysOnSampler());
                 }
-                else
-                {
-                    tracing.SetSampler(new TraceIdRatioBasedSampler(probability));
-                }
-
-                tracing.AddSource(otelSvcName);
 
                 var httpClientIgnoreUrls = ((string[])
                 [
@@ -51,6 +52,8 @@ internal static class OpenTelemetryConfigurator
                     TelemetryEnvironment.OtelExporterOtlpTracesEndpoint ?? string.Empty,
                     TelemetryEnvironment.OtelExporterOtlpLogsEndpoint ?? string.Empty
                 ]).Where(x => string.IsNullOrEmpty(x) is false).Distinct().ToArray();
+
+                tracing.SetResourceBuilder(resourceBuilder);
 
                 tracing
                     .AddAspNetCoreInstrumentation(aspnet =>
@@ -86,31 +89,13 @@ internal static class OpenTelemetryConfigurator
                             return !result;
                         });
                     });
-            });
 
-        builder.AddOpenTelemetryExporters();
-    }
-
-    private static void AddOpenTelemetryExporters(this IHostApplicationBuilder builder)
-    {
-        var genericOtelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-        var meterOtelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"];
-        var tracingOtelEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_TRACING_ENDPOINT"];
-
-        if (string.IsNullOrEmpty(genericOtelEndpoint ?? meterOtelEndpoint) is false)
-        {
-            builder.Services.ConfigureOpenTelemetryMeterProvider(metrics =>
-            {
-                metrics.AddOtlpExporter();
-            });
-        }
-
-        if (string.IsNullOrEmpty(genericOtelEndpoint ?? tracingOtelEndpoint) is false)
-        {
-            builder.Services.ConfigureOpenTelemetryTracerProvider(tracing =>
-            {
                 tracing.AddOtlpExporter();
+            })
+            .WithLogging(logger =>
+            {
+                logger.SetResourceBuilder(resourceBuilder);
+                logger.AddOtlpExporter();
             });
-        }
     }
 }

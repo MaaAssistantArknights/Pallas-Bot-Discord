@@ -3,7 +3,14 @@
 COPY . /build
 WORKDIR /build
 
-RUN dotnet publish ./src/PallasBot.App.Bot -c Release -o /artifacts -p:ContinuousIntegrationBuild=true
+ARG VERSION=0.0.0
+
+RUN dotnet publish ./src/PallasBot.App.Bot \
+    -c Release \
+    -o /artifacts \
+    -p:ContinuousIntegrationBuild=true \
+    -p:Version=$VERSION \
+    -p:InformationalVersion=$VERSION
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 
@@ -13,7 +20,6 @@ WORKDIR /app
 
 ENV ASPNETCORE_URLS=http://+:80
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV OTEL_SERVICE_NAME=pallas-bot
 
 EXPOSE 80
 
