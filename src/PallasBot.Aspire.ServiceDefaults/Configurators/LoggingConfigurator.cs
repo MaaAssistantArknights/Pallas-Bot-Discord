@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
+using PallasBot.Aspire.ServiceDefaults.Internal;
 using Serilog;
 using Serilog.Events;
 using Serilog.Filters;
@@ -31,7 +32,14 @@ internal static class LoggingConfigurator
                 cfg.WriteTo.File(writeToFile, rollingInterval: RollingInterval.Day);
             }
 
-            cfg.WriteTo.OpenTelemetry();
+            cfg.WriteTo.OpenTelemetry(options =>
+            {
+                var detector = new InternalResourceDetector(builder.Configuration, builder.Environment);
+                var resource = detector.Detect();
+
+                options.ResourceAttributes = resource.Attributes
+                    .ToDictionary(x => x.Key, x => x.Value);
+            });
 
             // string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar", "/openapi", "/favicon"];
 
