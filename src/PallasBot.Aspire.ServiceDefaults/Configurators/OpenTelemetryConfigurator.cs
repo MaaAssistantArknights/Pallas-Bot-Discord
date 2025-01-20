@@ -58,7 +58,7 @@ internal static class OpenTelemetryConfigurator
                 tracing
                     .AddAspNetCoreInstrumentation(aspnet =>
                     {
-                        string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar"];
+                        string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar", "/openapi", "/favicon"];
 
                         aspnet.Filter = ctx =>
                         {

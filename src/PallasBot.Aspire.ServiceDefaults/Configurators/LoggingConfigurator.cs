@@ -31,7 +31,7 @@ internal static class LoggingConfigurator
                 cfg.WriteTo.File(writeToFile, rollingInterval: RollingInterval.Day);
             }
 
-            // string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar"];
+            // string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar", "/openapi", "/favicon"];
 
             cfg.Filter.ByExcluding(Matching.WithProperty<string>("RequestPath", p =>
                 p.StartsWith("/health", StringComparison.InvariantCultureIgnoreCase) ||
