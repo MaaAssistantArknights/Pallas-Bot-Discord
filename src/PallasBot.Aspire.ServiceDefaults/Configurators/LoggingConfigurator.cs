@@ -31,6 +31,8 @@ internal static class LoggingConfigurator
                 cfg.WriteTo.File(writeToFile, rollingInterval: RollingInterval.Day);
             }
 
+            cfg.WriteTo.OpenTelemetry();
+
             // string[] ignoreUrls =  ["/health", "/alive", "/metrics", "/scalar", "/openapi", "/favicon"];
 
             cfg.Filter.ByExcluding(Matching.WithProperty<string>("RequestPath", p =>
@@ -43,6 +45,6 @@ internal static class LoggingConfigurator
             ));
 
             cfg.ReadFrom.Configuration(builder.Configuration);
-        }, writeToProviders: true);
+        });
     }
 }

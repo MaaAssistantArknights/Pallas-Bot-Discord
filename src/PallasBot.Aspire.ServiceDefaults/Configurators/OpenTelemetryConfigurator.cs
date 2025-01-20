@@ -15,11 +15,6 @@ internal static class OpenTelemetryConfigurator
     internal static void ConfigureOpenTelemetry(this IHostApplicationBuilder builder)
     {
         builder.Logging.ClearProviders();
-        builder.Logging.AddOpenTelemetry(options =>
-        {
-            options.IncludeScopes = true;
-            options.IncludeFormattedMessage = true;
-        });
 
         builder.Services.AddSingleton<InternalResourceDetector>();
 
@@ -91,11 +86,6 @@ internal static class OpenTelemetryConfigurator
                     });
 
                 tracing.AddOtlpExporter();
-            })
-            .WithLogging(logger =>
-            {
-                logger.SetResourceBuilder(resourceBuilder);
-                logger.AddOtlpExporter();
             });
     }
 }
