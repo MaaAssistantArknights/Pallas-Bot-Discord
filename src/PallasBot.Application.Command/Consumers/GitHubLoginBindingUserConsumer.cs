@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Rest;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using PallasBot.Application.Common.Models.Messages.GitHub;
 using PallasBot.Application.Common.Services;
 using PallasBot.Domain.Entities;
@@ -30,15 +31,26 @@ public class GitHubLoginBindingUserConsumer : IConsumer<GitHubLoginBindingUserMq
 
         var githubUser = await _gitHubApiService.GetCurrentUserInfoAsync(m.AccessToken);
 
-        var binding = new GitHubUserBinding
+        var existingBinding = await _pallasBotDbContext.DiscordUserBindings
+            .FirstOrDefaultAsync(x => x.GuildId == m.GuildId && x.DiscordUserId == m.DiscordUserId);
+        if (existingBinding is not null)
         {
-            GuildId = m.GuildId,
-            DiscordUserId = m.DiscordUserId,
-            GitHubUserId = githubUser.Id,
-            GitHubLogin = githubUser.Login,
-        };
+            existingBinding.GitHubLogin = githubUser.Login;
+            existingBinding.GitHubUserId = githubUser.Id;
 
-        await _pallasBotDbContext.GitHubUserBindings.AddAsync(binding);
+            _pallasBotDbContext.Update(existingBinding);
+        }
+        else
+        {
+            await _pallasBotDbContext.AddAsync(new DiscordUserBinding
+            {
+                GuildId = m.GuildId,
+                DiscordUserId = m.DiscordUserId,
+                GitHubUserId = githubUser.Id,
+                GitHubLogin = githubUser.Login,
+            });
+        }
+
         await _pallasBotDbContext.SaveChangesAsync();
 
         var embed = new EmbedBuilder()

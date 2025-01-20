@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -46,12 +45,22 @@ namespace PallasBot.EntityFrameworkCore.Migrations
                 columns: table => new
                 {
                     github_login = table.Column<string>(type: "text", nullable: false),
-                    is_organization_member = table.Column<bool>(type: "boolean", nullable: false),
-                    contribute_to = table.Column<List<string>>(type: "text[]", nullable: false)
+                    repository = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_github_contributors", x => x.github_login);
+                    table.PrimaryKey("PK_github_contributors", x => new { x.github_login, x.repository });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "github_organization_member",
+                columns: table => new
+                {
+                    github_login = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_github_organization_member", x => x.github_login);
                 });
 
             migrationBuilder.CreateTable(
@@ -80,6 +89,9 @@ namespace PallasBot.EntityFrameworkCore.Migrations
 
             migrationBuilder.DropTable(
                 name: "github_contributors");
+
+            migrationBuilder.DropTable(
+                name: "github_organization_member");
 
             migrationBuilder.DropTable(
                 name: "github_user_binding");

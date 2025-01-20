@@ -4,9 +4,9 @@ using PallasBot.Domain.Entities;
 
 namespace PallasBot.EntityFrameworkCore.Configurator;
 
-public class GitHubUserBindingConfigurator : IEntityTypeConfiguration<GitHubUserBinding>
+public class DiscordUserBindingConfigurator : IEntityTypeConfiguration<DiscordUserBinding>
 {
-    public void Configure(EntityTypeBuilder<GitHubUserBinding> builder)
+    public void Configure(EntityTypeBuilder<DiscordUserBinding> builder)
     {
         builder.HasKey(x => new { x.GuildId, x.DiscordUserId });
     }

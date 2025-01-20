@@ -29,8 +29,11 @@ public class LoginCommands : InteractionModuleBase
     [SlashCommand("github", "Login and bind your GitHub account")]
     public async Task LoginWithGitHubAsync()
     {
-        var existing = await _pallasBotDbContext.GitHubUserBindings
-            .FirstOrDefaultAsync(x => x.DiscordUserId == Context.User.Id);
+        var existing = await _pallasBotDbContext.DiscordUserBindings
+            .FirstOrDefaultAsync(x =>
+                x.GuildId == Context.Guild.Id &&
+                x.DiscordUserId == Context.User.Id &&
+                x.GitHubLogin != string.Empty);
         if (existing is not null)
         {
             var errorEmbed = new EmbedBuilder()

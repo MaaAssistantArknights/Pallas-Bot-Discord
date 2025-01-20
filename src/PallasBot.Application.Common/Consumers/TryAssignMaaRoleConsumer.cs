@@ -1,6 +1,5 @@
 ﻿using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using PallasBot.Application.Common.Models.Messages;
 using PallasBot.Domain.Abstract;
 using PallasBot.Domain.Enums;
@@ -12,16 +11,13 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
 {
     private readonly IDynamicConfigurationService _dynamicConfigurationService;
     private readonly PallasBotDbContext _pallasBotDbContext;
-    private readonly ILogger<TryAssignMaaRoleConsumer> _logger;
 
     public TryAssignMaaRoleConsumer(
         IDynamicConfigurationService dynamicConfigurationService,
-        PallasBotDbContext pallasBotDbContext,
-        ILogger<TryAssignMaaRoleConsumer> logger)
+        PallasBotDbContext pallasBotDbContext)
     {
         _dynamicConfigurationService = dynamicConfigurationService;
         _pallasBotDbContext = pallasBotDbContext;
-        _logger = logger;
     }
 
     public async Task Consume(ConsumeContext<TryAssignMaaRoleMqo> context)
@@ -39,24 +35,21 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
         var memberRole = ulong.Parse(memberRoleId);
         var contributorRole = ulong.Parse(contributorRoleId);
 
-        var githubUser = await _pallasBotDbContext.GitHubUserBindings
-            .Where(x => x.GuildId == m.GuildId && x.DiscordUserId == m.UserId)
-            .FirstOrDefaultAsync();
-        if (githubUser is null)
-        {
-            return;
-        }
-
-        var githubContribution = await _pallasBotDbContext.GitHubContributors
-            .Where(x => x.GitHubLogin == githubUser.GitHubLogin)
-            .FirstOrDefaultAsync();
-        if (githubContribution is null)
+        var userBinding = await _pallasBotDbContext.DiscordUserBindings
+            .FirstOrDefaultAsync(x => x.GuildId == m.GuildId && x.DiscordUserId == m.UserId);
+        if (userBinding is null)
         {
             return;
         }
 
         var cache = await _pallasBotDbContext.DiscordUserRoles
             .FirstOrDefaultAsync(x => x.GuildId == m.GuildId && x.UserId == m.UserId);
+
+        var isMember = await _pallasBotDbContext.GitHubOrganizationMembers
+            .AnyAsync(x => x.GitHubLogin == userBinding.GitHubLogin);
+        var isContributor = await _pallasBotDbContext.GitHubContributors
+            .AnyAsync(x => x.GitHubLogin == userBinding.GitHubLogin);
+
         var cacheRoleIds = cache?.RoleIds ?? [];
 
         var msg = new AssignDiscordRoleMqo
@@ -65,7 +58,7 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
             UserId = m.UserId
         };
 
-        if (githubContribution.IsOrganizationMember)
+        if (isMember)
         {
             if (cacheRoleIds.Contains(memberRole) is false)
             {
@@ -80,7 +73,7 @@ public class TryAssignMaaRoleConsumer : IConsumer<TryAssignMaaRoleMqo>
             }
         }
 
-        if (githubContribution.ContributeTo.Count > 0)
+        if (isContributor)
         {
             if (cacheRoleIds.Contains(contributorRole) is false)
             {

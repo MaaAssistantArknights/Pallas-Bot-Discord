@@ -3,7 +3,7 @@
 namespace PallasBot.Domain.Entities;
 
 [Table("github_user_binding")]
-public record GitHubUserBinding
+public record DiscordUserBinding
 {
     [Column("guild_id")]
     public ulong GuildId { get; set; }

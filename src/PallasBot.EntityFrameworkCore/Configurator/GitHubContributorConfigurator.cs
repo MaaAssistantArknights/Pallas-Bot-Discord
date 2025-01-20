@@ -8,6 +8,6 @@ public class GitHubContributorConfigurator : IEntityTypeConfiguration<GitHubCont
 {
     public void Configure(EntityTypeBuilder<GitHubContributor> builder)
     {
-        builder.HasKey(x => x.GitHubLogin);
+        builder.HasKey(x => new { x.GitHubLogin, x.Repository });
     }
 }
