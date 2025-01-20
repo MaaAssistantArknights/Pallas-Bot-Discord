@@ -22,4 +22,8 @@ public record WebhookMessageMqo
 
         return string.Empty;
     }
+
+    public const string HeaderEventType = "X-GitHub-Event";
+    public const string HeaderDeliveryId = "X-GitHub-Delivery";
+    public const string HeaderSignature = "X-Hub-Signature-256";
 }

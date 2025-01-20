@@ -3,8 +3,8 @@ using System.Text.Json;
 using Discord;
 using Discord.Rest;
 using PallasBot.Application.Common.Abstract;
-using PallasBot.Application.Common.Models;
 using PallasBot.Application.Common.Models.Messages;
+using PallasBot.Application.Webhook.Services;
 using PallasBot.Domain.Abstract;
 using PallasBot.Domain.Enums;
 
@@ -14,22 +14,33 @@ public class GitHubWebhookProcessor : IWebhookProcessor
 {
     private readonly DiscordRestClient _discordRestClient;
     private readonly IDynamicConfigurationService _dynamicConfigurationService;
+    private readonly GitHubWebhookValidator _gitHubWebhookValidator;
 
     public GitHubWebhookProcessor(
         DiscordRestClient discordRestClient,
-        IDynamicConfigurationService dynamicConfigurationService)
+        IDynamicConfigurationService dynamicConfigurationService,
+        GitHubWebhookValidator gitHubWebhookValidator)
     {
         _discordRestClient = discordRestClient;
         _dynamicConfigurationService = dynamicConfigurationService;
+        _gitHubWebhookValidator = gitHubWebhookValidator;
     }
 
     public async Task ProcessAsync(WebhookMessageMqo messageMqo)
     {
-        var eventType = messageMqo.GetHeader("X-GitHub-Event");
-        var deliveryId = messageMqo.GetHeader("X-GitHub-Delivery");
+        var eventType = messageMqo.GetHeader(WebhookMessageMqo.HeaderEventType);
+        var deliveryId = messageMqo.GetHeader(WebhookMessageMqo.HeaderDeliveryId);
+        var signature = messageMqo.GetHeader(WebhookMessageMqo.HeaderSignature);
 
         Activity.Current?.AddTag("webhook.github.event-type", eventType);
         Activity.Current?.AddTag("webhook.github.delivery-id", deliveryId);
+        Activity.Current?.AddTag("webhook.github.signature", signature);
+
+        var validationResult = await _gitHubWebhookValidator.ValidateAsync(messageMqo.Body, signature);
+        if (validationResult.IsFailed)
+        {
+            throw new InvalidOperationException($"GitHub webhook validation failed. {string.Join(',', validationResult.Errors.Select(x => x.ToString()))}");
+        }
 
         switch (eventType)
         {

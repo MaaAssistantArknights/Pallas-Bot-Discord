@@ -11,6 +11,8 @@ public record GitHubOptions : IOptionType<GitHubOptions>
 
     public string PemFile { get; set; } = string.Empty;
 
+    public GitHubWebhookOptions Webhook { get; set; } = new();
+
     public static GitHubOptions Get(IConfiguration configuration)
     {
         var options = new GitHubOptions();
@@ -18,4 +20,9 @@ public record GitHubOptions : IOptionType<GitHubOptions>
 
         return options;
     }
+}
+
+public record GitHubWebhookOptions
+{
+    public string Secret { get; set; } = string.Empty;
 }
