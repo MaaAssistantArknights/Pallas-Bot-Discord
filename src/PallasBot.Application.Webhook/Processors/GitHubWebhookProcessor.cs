@@ -1,29 +1,23 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
-using Discord;
-using Discord.Rest;
+using MassTransit;
 using PallasBot.Application.Common.Abstract;
 using PallasBot.Application.Common.Models.Messages;
+using PallasBot.Application.Webhook.Models;
 using PallasBot.Application.Webhook.Services;
-using PallasBot.Domain.Abstract;
-using PallasBot.Domain.Enums;
 
 namespace PallasBot.Application.Webhook.Processors;
 
 public class GitHubWebhookProcessor : IWebhookProcessor
 {
-    private readonly DiscordRestClient _discordRestClient;
-    private readonly IDynamicConfigurationService _dynamicConfigurationService;
     private readonly GitHubWebhookValidator _gitHubWebhookValidator;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     public GitHubWebhookProcessor(
-        DiscordRestClient discordRestClient,
-        IDynamicConfigurationService dynamicConfigurationService,
-        GitHubWebhookValidator gitHubWebhookValidator)
+        GitHubWebhookValidator gitHubWebhookValidator, IPublishEndpoint publishEndpoint)
     {
-        _discordRestClient = discordRestClient;
-        _dynamicConfigurationService = dynamicConfigurationService;
         _gitHubWebhookValidator = gitHubWebhookValidator;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task ProcessAsync(WebhookMessageMqo messageMqo)
@@ -56,13 +50,6 @@ public class GitHubWebhookProcessor : IWebhookProcessor
 
     private async Task ProcessReleaseEventAsync(string body)
     {
-        var channels = (await _dynamicConfigurationService
-                .GetAllAsync(DynamicConfigurationKey.MaaReleaseNotificationChannel))
-            .Select(x => ulong.TryParse(x.Value, out var v) ? v : (ulong?)null)
-            .Where(x => x != null)
-            .Select(x => x!.Value)
-            .ToList();
-
         using var doc = JsonDocument.Parse(body);
         var root = doc.RootElement;
 
@@ -74,69 +61,12 @@ public class GitHubWebhookProcessor : IWebhookProcessor
 
         var release = root.GetProperty("release");
 
-        var name = release.GetProperty("name").GetString()!;
-        var htmlUrl = release.GetProperty("html_url").GetString()!;
-
-        var assets = release.GetProperty("assets")
-            .EnumerateArray()
-            .ToArray();
-
-        var assetUrls = new Dictionary<string, string>();
-        var platforms = GetAssetPlatforms(name);
-        foreach (var asset in assets)
+        var id = release.GetProperty("id").GetUInt64();
+        var publishedAt = release.GetProperty("published_at").GetDateTimeOffset();
+        await _publishEndpoint.Publish(new MaaReleaseMqo
         {
-            var assetName = asset.GetProperty("name").GetString();
-            if (string.IsNullOrEmpty(assetName) is false && platforms.TryGetValue(assetName, out var platform))
-            {
-                var downloadUrl = asset.GetProperty("browser_download_url").GetString();
-                var size = asset.GetProperty("size").GetDouble();
-
-                var sizeInMegabytes = size / 1024 / 1024;
-
-                if (string.IsNullOrEmpty(downloadUrl) is false)
-                {
-                    assetUrls.Add($"{platform} [{sizeInMegabytes:F1} MB]", downloadUrl);
-                }
-            }
-        }
-
-        var componentBuilder = new ComponentBuilder();
-        foreach (var (platform, url) in assetUrls.OrderByDescending(x => x.Value))
-        {
-            componentBuilder.WithButton(
-                label: platform,
-                style: ButtonStyle.Link,
-                url: url);
-        }
-
-        var components = componentBuilder.Build();
-        var textMessage = $"""
-                           ## 🎉 New MAA Release: ** {name} **
-
-                           Read the full release note [here]({htmlUrl}).
-
-                           Open or reopen your MAA client to get automatic updates.
-                           Or, download MAA {name} for your platform by clicking the buttons below.
-
-                           """;
-
-        foreach (var channelId in channels)
-        {
-            var channel = (IRestMessageChannel) await _discordRestClient.GetChannelAsync(channelId);
-
-            await channel.SendMessageAsync(
-                text: textMessage,
-                components: components);
-        }
-    }
-
-    private static Dictionary<string, string> GetAssetPlatforms(string name)
-    {
-        return new Dictionary<string, string>
-        {
-            [$"MAA-{name}-win-x64.zip"] = "Windows (x64)",
-            [$"MAA-{name}-macos-universal.dmg"] = "macOS (Universal, dmg)",
-            [$"MAA-{name}-linux-x86_64.tar.gz"] = "Linux (amd64, tar.gz)",
-        };
+            ReleaseId = id,
+            ReleaseAt = publishedAt
+        });
     }
 }

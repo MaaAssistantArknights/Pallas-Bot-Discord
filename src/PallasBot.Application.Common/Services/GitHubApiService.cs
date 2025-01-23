@@ -134,6 +134,22 @@ public class GitHubApiService
 
     #endregion
 
+    #region Repository
+
+    public async Task<GitHubRelease> GetReleaseDetailAsync(string organization, string repository, ulong id, string? accessToken = null)
+    {
+        using var req = new GitHubHttpRequestBuilder()
+            .Get($"https://api.github.com/repos/{organization}/{repository}/releases/{id}")
+            .WithBearerAuth(accessToken)
+            .AcceptGitHubJson()
+            .WithLatestApiVersion()
+            .Build();
+
+        return await SendRequest<GitHubRelease>(req);
+    }
+
+    #endregion
+
     private async Task<List<T>> GetPaginatedResponseAsync<T>(Func<GitHubHttpRequestBuilder> requestBuilder, string url)
     {
         var nextUrl = url;

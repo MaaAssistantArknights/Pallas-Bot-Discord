@@ -27,8 +27,13 @@ public class GitHubHttpRequestBuilder : IDisposable
         return this;
     }
 
-    public GitHubHttpRequestBuilder WithBearerAuth(string token)
+    public GitHubHttpRequestBuilder WithBearerAuth(string? token)
     {
+        if (string.IsNullOrEmpty(token))
+        {
+            return this;
+        }
+
         _httpRequestMessage.Headers.Add("Authorization", $"Bearer {token}");
         return this;
     }
