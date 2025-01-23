@@ -6,3 +6,10 @@ GitHub:
   PemFile: PATH_TO_YOUR_PRIVATE_KEY_PEM_FILE
   Webhook:
     Secret: WEBHOOK_SECRET
+
+AI:
+  Endpoint: https://openrouter.ai/api/v1
+  ApiKey: OPENROUTER_API_KEY
+  Models:
+    Default: deepseek/deepseek-chat
+    ChangelogSummary: deepseek/deepseek-chat

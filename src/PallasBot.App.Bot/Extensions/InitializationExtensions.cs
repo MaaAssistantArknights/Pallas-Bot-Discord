@@ -155,5 +155,18 @@ public static class InitializationExtensions
                 Proxy = webProxy,
                 UseProxy = networkProxyEnabled
             });
+
+        builder.Services.AddHttpClient("OpenRouterAI", client =>
+            {
+                var title = builder.Environment.IsDevelopment()
+                    ? "Development"
+                    : "Pallas-Bot";
+                client.DefaultRequestHeaders.Add("X-Title", title);
+            })
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            Proxy = webProxy,
+            UseProxy = networkProxyEnabled
+        });
     }
 }
