@@ -104,6 +104,7 @@ public abstract class ScopedTimedBackgroundWorker<TService> : IHostedService, ID
         GC.SuppressFinalize(this);
 
         _periodicTimer?.Dispose();
+        _semaphore.Dispose();
     }
 }
 
