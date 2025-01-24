@@ -1,10 +1,12 @@
-﻿using System.Text.Json;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
+using System.Text.Json;
 using FluentResults;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using PallasBot.Application.Common.Models.GitHub;
 using PallasBot.Application.Common.Options;
 using PallasBot.Application.Common.Utils;
-using PallasBot.Domain.Utils;
 
 namespace PallasBot.Application.Common.Services;
 
@@ -13,6 +15,8 @@ public class GitHubApiService
     private readonly HttpClient _client;
     private readonly GitHubOptions _options;
 
+    private readonly RsaSecurityKey _rsaSecurityKey;
+
     // This service is Singleton so it's safe to cache the token here
     private GitHubAppAccessToken? _gitHubAppAccessTokenCache;
 
@@ -20,6 +24,11 @@ public class GitHubApiService
     {
         _client = httpClientFactory.CreateClient("Default");
         _options = GitHubOptions.Get(configuration);
+
+        var pemContent = File.ReadAllText(_options.PemFile);
+        var rsa = RSA.Create();
+        rsa.ImportFromPem(pemContent);
+        _rsaSecurityKey = new RsaSecurityKey(rsa);
     }
 
     #region Authentication
@@ -79,7 +88,7 @@ public class GitHubApiService
             return _gitHubAppAccessTokenCache;
         }
 
-        var jwt = await JwtUtils.GenerateGitHubAppJwtAsync(_options.ClientId, _options.PemFile);
+        var jwt = GenerateGitHubAppJwt();
         using var req = new GitHubHttpRequestBuilder()
             .Post($"https://api.github.com/app/installations/{_options.InstallationId}/access_tokens")
             .AcceptGitHubJson()
@@ -201,5 +210,25 @@ public class GitHubApiService
                    ?? throw new HttpRequestException("Failed to deserialize response");
 
         return json;
+    }
+
+    private string GenerateGitHubAppJwt()
+    {
+        var handler = new JwtSecurityTokenHandler();
+
+        var now = DateTime.UtcNow;
+
+        var descriptor = new SecurityTokenDescriptor
+        {
+            IssuedAt = now,
+            Expires = now.AddMinutes(10),
+            Issuer = _options.ClientId,
+            SigningCredentials = new SigningCredentials(_rsaSecurityKey, "RS256")
+        };
+
+        var token = handler.CreateEncodedJwt(descriptor)
+                    ?? throw new InvalidOperationException("Failed to create JWT token");
+
+        return token;
     }
 }
