@@ -19,6 +19,15 @@
       "matchPackageNames": [
         "Serilog*"
       ]
+    },
+    {
+      "matchPackageNames": [
+        "Scalar.AspNetCore"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ]
     }
   ]
 }
