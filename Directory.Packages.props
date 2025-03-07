@@ -34,6 +34,6 @@
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageVersion Include="Serilog.Sinks.OpenTelemetry" Version="4.1.1" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.6.1" />
   </ItemGroup>
 </Project>
