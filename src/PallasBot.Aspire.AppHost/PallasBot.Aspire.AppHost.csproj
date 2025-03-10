@@ -5,7 +5,7 @@
     <IsAspireHost>true</IsAspireHost>
   </PropertyGroup>
 
-  <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.1.0" />
  
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" />
